@@ -7,6 +7,4 @@ C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Ser
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Server.csproj.GenerateResource.Cache
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Server.exe
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Server.pdb
-C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\bin\Release\AForge.Video.FFMPEG.xml
-C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\bin\Release\AForge.Video.xml
-C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\bin\Release\AForge.xml
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\bin\Release\SharpAvi.xml

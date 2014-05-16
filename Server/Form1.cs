@@ -9,8 +9,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Windows.Forms;
-using AForge.Video.FFMPEG;
 using System.Threading;
+using SharpAvi.Output;
+using SharpAvi.Codecs;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace Server
 {
@@ -18,10 +21,13 @@ namespace Server
     {
         private TcpListener server = null;
         private List<Image> images;
+        int width = 320;
+        int height = 240;
 
         public Form1()
         {
             InitializeComponent();
+
             new Thread(StartServer).Start();
         }
 
@@ -37,7 +43,11 @@ namespace Server
                 while (true)
                 {
                     TcpClient client = server.AcceptTcpClient();
-                    //new Thread(ClientConnection).Start(client);
+                    this.Invoke((MethodInvoker) delegate()
+                    {
+                        textBox1.Text = "Recording....";
+                        linkLabel1.Enabled = false;
+                    });
                     ClientConnection(client);
                     client.Close();
                 }
@@ -84,7 +94,7 @@ namespace Server
                         totalByteRead = 0;
                         this.Invoke((MethodInvoker)delegate()
                         {
-                            pictureBox.Image = data;
+                            pictureBox.Image = (Image)data.Clone();
                         });
                         images.Add(data);
                     }
@@ -96,13 +106,32 @@ namespace Server
             }
             finally
             {
-                VideoFileWriter writer = new VideoFileWriter();
-                writer.Open("video.avi", 320, 240, 25, VideoCodec.MPEG4, 1000000);
-                for (int i = 0; i < images.Count; i++)
+                this.Invoke((MethodInvoker)delegate()
                 {
-                    writer.WriteVideoFrame((Bitmap)images[i]);
+                    textBox1.Text = "Creating Video File...";
+                });
+                AviWriter writer = new AviWriter("prova.avi");
+                writer.FramesPerSecond = 1;
+                IVideoEncoder encoder = new RgbVideoEncoder(width, height);
+                AsyncVideoStreamWrapper videoStream = writer.AddVideoStream().WithEncoder(encoder).Async();
+                videoStream.Name = "MyVideoStream";
+                videoStream.Width = width;
+                videoStream.Height = height;
+                for (int i = 0; i < images.Count; i++) {
+                    byte[] image = new byte[width * height * 4];
+                    GetByteArray((Bitmap)images[i], image);
+                    Console.WriteLine("Image size: " + image.Length);
+                    videoStream.BeginWriteFrame(true, image, 0, image.Length);
+                    videoStream.EndWriteFrame();
                 }
                 writer.Close();
+                this.Invoke((MethodInvoker)delegate()
+                {
+                    textBox1.Text = "Waiting for Device...";
+                    linkLabel1.Enabled = true;
+                    linkLabel1.Text = "Visualizza il Video...";
+                    linkLabel1.LinkArea = new System.Windows.Forms.LinkArea(14, 5);
+                });
             }
         }
 
@@ -112,6 +141,29 @@ namespace Server
             ms.Write(byteArrayIn, 0, byteArrayIn.Length);
             Image returnImage = Image.FromStream(ms);
             return returnImage;
+        }
+
+        public byte[] imageToByteArray(System.Drawing.Image imageIn)
+        {
+            MemoryStream ms = new MemoryStream();
+            imageIn.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp );
+            return ms.ToArray();
+        }
+
+        private void GetByteArray(Bitmap image, byte[] buffer)
+        {
+            using (var bitmap = image)
+            using (var graphics = Graphics.FromImage(bitmap))
+            {
+                var bits = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+                Marshal.Copy(bits.Scan0, buffer, 0, buffer.Length);
+                bitmap.UnlockBits(bits);
+            }
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            System.Diagnostics.Process.Start("prova.avi");
         }
     }
 }
