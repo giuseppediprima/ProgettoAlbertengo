@@ -22,16 +22,21 @@ namespace ProgettoAlbertengo
         static int stato = 0;
         Window mainWindow;
         StackPanel initPanel;
+        StackPanel initPanel1;
+        StackPanel initPanel2;
         StackPanel takePhoto;
         StackPanel videoStreaming;
         StackPanel gallery;
+        StackPanel pc;
 
         Image photoImg = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.photoImg), Bitmap.BitmapImageType.Bmp));
         Image videoImg = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.videoImg), Bitmap.BitmapImageType.Bmp));
         Image galleryImg = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.galleryImg), Bitmap.BitmapImageType.Bmp));
+        Image pcImg = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.pcImg), Bitmap.BitmapImageType.Bmp));
         Image photoImgPressed = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.photoImgPressed), Bitmap.BitmapImageType.Bmp));
         Image videoImgPressed = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.videoImgPressed), Bitmap.BitmapImageType.Bmp));
         Image galleryImgPressed = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.galleryImgPressed), Bitmap.BitmapImageType.Bmp));
+        Image pcImgPressed = new Image(new Bitmap(Resources.GetBytes(Resources.BinaryResources.pcImgPressed), Bitmap.BitmapImageType.Bmp));
 
         StackPanel savePhotoPanel;
         StackPanel labelSavePhoto;
@@ -81,7 +86,7 @@ namespace ProgettoAlbertengo
             timer.Tick += timer_Tick;
             ledSd.TurnRed();
 
-            new Thread(new ThreadStart(connectEthernet)).Start();
+            Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Debug.Print("Program Started");
             
         }
@@ -101,7 +106,9 @@ namespace ProgettoAlbertengo
                 mainWindow.Background = new SolidColorBrush(Color.Black);
                 stato = 0;
                 ShowInitButtons();
-                new Thread(new ThreadStart(() => { if (s != null) s.Close(); })).Start();
+                Thread t = new Thread(new ThreadStart(() => { if (s != null) s.Close(); }));
+                t.Priority = ThreadPriority.BelowNormal;
+                t.Start();
             }
         }
 
@@ -162,7 +169,11 @@ namespace ProgettoAlbertengo
             if (stato == 1)
                 display.SimpleGraphics.DisplayImage(bitmap, 0, 0);
             if (stato == 4)
-                new Thread(new ThreadStart(sendImage)).Start();
+            {
+                Thread t = new Thread(new ThreadStart(sendImage));
+                t.Priority = ThreadPriority.BelowNormal;
+                t.Start();
+            }
         }
 
         private void backButton_Pressed(Button sender, Button.ButtonState state)
@@ -198,7 +209,9 @@ namespace ProgettoAlbertengo
                     mainWindow.Background = new SolidColorBrush(Color.Black);
                     stato = 0;
                     ShowInitButtons();
-                    new Thread(new ThreadStart(() => { if (s != null) s.Close(); })).Start();
+                    Thread t = new Thread(new ThreadStart(() => { if (s != null) s.Close(); }));
+                    t.Priority = ThreadPriority.BelowNormal;
+                    t.Start();
                     break;
 
                 default:
@@ -220,7 +233,9 @@ namespace ProgettoAlbertengo
                 case 2:
                     // Take Photo state
                     HideSavePhotoButtons();
-                    new Thread(savePicture).Start();
+                    Thread t = new Thread(savePicture);
+                    t.Priority = ThreadPriority.BelowNormal;
+                    t.Start();
                     ShowInitButtons();
                     stato = 0;
                     break;
@@ -258,6 +273,23 @@ namespace ProgettoAlbertengo
             timer.Start();
             stato = 3;
             mostraGalleria();
+        }
+
+        private void pc_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
+        {
+            Debug.Print("PC Button pressed...");
+            pc.Children.Clear();
+            pc.Children.Add(pcImgPressed);
+            mainWindow.Invalidate();
+        }
+
+        private void pc_TouchUp(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
+        {
+            Debug.Print("PC Button released...");
+            pc.Children.Clear();
+            pc.Children.Add(pcImg);
+            mainWindow.Invalidate();
+
         }
 
         private void videoStreaming_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
@@ -331,7 +363,9 @@ namespace ProgettoAlbertengo
 
             HideSavePhotoButtons();
 
-            new Thread(savePicture).Start();
+            Thread t = new Thread(savePicture);
+            t.Priority = ThreadPriority.BelowNormal;
+            t.Start();
             stato = 0;
             ShowInitButtons();
         }
@@ -578,35 +612,54 @@ namespace ProgettoAlbertengo
         {
             //Create StackPanels
             initPanel = new StackPanel(Orientation.Vertical);
+            initPanel1 = new StackPanel(Orientation.Horizontal);
+            initPanel2 = new StackPanel(Orientation.Horizontal);
             takePhoto = new StackPanel(Orientation.Horizontal);
-            videoStreaming = new StackPanel(Orientation.Vertical);
+            videoStreaming = new StackPanel(Orientation.Horizontal);
             gallery = new StackPanel(Orientation.Horizontal);
-
+            pc = new StackPanel(Orientation.Horizontal);
+            StackPanel separator = new StackPanel(Orientation.Horizontal);
+            StackPanel separator1 = new StackPanel(Orientation.Horizontal);
 
             //Set Margin to 6 for each StackPanel
-            initPanel.SetMargin(6);
+            initPanel1.SetMargin(2);
+            initPanel2.SetMargin(2);
             takePhoto.SetMargin(6);
             videoStreaming.SetMargin(6);
             gallery.SetMargin(6);
+            pc.SetMargin(6);
+            separator.Height = separator.Width = 20;
+            separator1.Height = separator1.Width = 20;
             //Center align StackPanel Horizontally
+            initPanel1.HorizontalAlignment = HorizontalAlignment.Center;
+            initPanel2.HorizontalAlignment = HorizontalAlignment.Center;
             takePhoto.HorizontalAlignment = HorizontalAlignment.Center;
             videoStreaming.HorizontalAlignment = HorizontalAlignment.Center;
             gallery.HorizontalAlignment = HorizontalAlignment.Center;
+            pc.HorizontalAlignment = HorizontalAlignment.Center;
             //Create Associations between StackPanels and Images
             takePhoto.Children.Add(photoImg);
             videoStreaming.Children.Add(videoImg);
             gallery.Children.Add(galleryImg);
-            initPanel.Children.Add(takePhoto);
-            initPanel.Children.Add(videoStreaming);
-            initPanel.Children.Add(gallery);
+            pc.Children.Add(pcImg);
+            initPanel1.Children.Add(takePhoto);
+            initPanel1.Children.Add(separator);
+            initPanel1.Children.Add(gallery);
+            initPanel2.Children.Add(videoStreaming);
+            initPanel2.Children.Add(separator1);
+            initPanel2.Children.Add(pc);
+            initPanel.Children.Add(initPanel1);
+            initPanel.Children.Add(initPanel2);
 
             takePhoto.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(takePhoto_TouchDown);
             videoStreaming.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(videoStreaming_TouchDown);
             gallery.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(gallery_TouchDown);
+            pc.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(pc_TouchDown);
 
             takePhoto.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(takePhoto_TouchUp);
             videoStreaming.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(videoStreaming_TouchUp);
             gallery.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(gallery_TouchUp);
+            pc.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(pc_TouchUp);
         }
 
         private void HideInitButtons()
@@ -641,7 +694,9 @@ namespace ProgettoAlbertengo
             tmp.DrawText("Press Back Button to end", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.Red, 50, 100);
             mainWindow.Background = new ImageBrush(tmp);
             camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
-            new Thread(new ThreadStart(connectSocket)).Start();
+            Thread t = new Thread(new ThreadStart(connectSocket));
+            t.Priority = ThreadPriority.Normal;
+            t.Start();
         }
 
         private void removeImage()

@@ -192,4 +192,10 @@
   <ItemGroup>
     <None Include="Resources\SD_card1.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pcImgPressed.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pcImg.bmp" />
+  </ItemGroup>
 </Project>

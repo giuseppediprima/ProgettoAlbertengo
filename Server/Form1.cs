@@ -27,11 +27,11 @@ namespace Server
         public Form1()
         {
             InitializeComponent();
-
-            new Thread(StartServer).Start();
+            
+            new Thread(StartRecordingServer).Start();
         }
 
-        private void StartServer(object obj)
+        private void StartRecordingServer(object obj)
         {
             Int32 port = 13000;
             IPAddress address = IPAddress.Any;
@@ -42,6 +42,10 @@ namespace Server
 
                 while (true)
                 {
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        pictureBox.Image = pictureBox.InitialImage;
+                    });
                     TcpClient client = server.AcceptTcpClient();
                     this.Invoke((MethodInvoker) delegate()
                     {
@@ -129,8 +133,10 @@ namespace Server
                 {
                     textBox1.Text = "Waiting for Device...";
                     linkLabel1.Enabled = true;
-                    linkLabel1.Text = "Visualizza il Video...";
-                    linkLabel1.LinkArea = new System.Windows.Forms.LinkArea(14, 5);
+                    linkLabel1.Text = "Visualizza il Video o invialo per E-Mail...";
+                    //linkLabel1.LinkArea = new System.Windows.Forms.LinkArea(14, 5);
+                    linkLabel1.Links.Add(14, 5, "video");
+                    linkLabel1.Links.Add(34, 6, "email");
                 });
             }
         }
@@ -163,7 +169,23 @@ namespace Server
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            System.Diagnostics.Process.Start("prova.avi");
+            // Determine which link was clicked within the LinkLabel. 
+            this.linkLabel1.Links[linkLabel1.Links.IndexOf(e.Link)].Visited = true;
+
+            // Display the appropriate link based on the value of the  
+            // LinkData property of the Link object. 
+            string target = e.Link.LinkData as string;
+
+            if (target != null && target.Equals("video"))
+                System.Diagnostics.Process.Start("prova.avi");
+            else if (target != null && target.Equals("email"))
+            {
+                Thread t = new Thread(new ThreadStart(() => { 
+                    Application.Run(new frmTestEmail("progettoalbertengo@gmail.com", "Prova Video Send", "Watch my Video!!!!", Path.GetDirectoryName(Application.ExecutablePath)+"\\prova.avi")); 
+                }));
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+            }
         }
     }
 }

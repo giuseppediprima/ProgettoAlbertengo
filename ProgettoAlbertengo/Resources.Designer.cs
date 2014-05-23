@@ -36,9 +36,11 @@ namespace ProgettoAlbertengo
         [System.SerializableAttribute()]
         internal enum BinaryResources : short
         {
+            pcImg = -30851,
             cancelSaveImgPressed = -29628,
             no_image = -29198,
             videoImg = -22591,
+            pcImgPressed = -22080,
             galleryImgPressed = -18562,
             videoImgPressed = -16543,
             photoImgPressed = -13447,
