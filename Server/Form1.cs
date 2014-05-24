@@ -14,6 +14,7 @@ using SharpAvi.Output;
 using SharpAvi.Codecs;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using Server.MyImageDataSetTableAdapters;
 
 namespace Server
 {
@@ -27,11 +28,48 @@ namespace Server
         public Form1()
         {
             InitializeComponent();
-            
-            new Thread(StartRecordingServer).Start();
+            pictureBox.Image = pictureBox.InitialImage;
+
+            new Thread(new ThreadStart(StartRecordingServer)).Start();
+
+            new Thread(new ThreadStart(StartUpdateServer)).Start();
         }
 
-        private void StartRecordingServer(object obj)
+        private void StartUpdateServer()
+        {
+            Int32 port = 14000;
+            IPAddress address = IPAddress.Any;
+            try
+            {
+                server = new TcpListener(address, port);
+                server.Start();
+
+                while (true)
+                {
+                    TcpClient client = server.AcceptTcpClient();
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        textBox1.Text = "Upload Images....";
+                        linkLabel1.Enabled = false;
+                        linkLabel1.Links.Clear();
+                        linkLabel1.Text = "";
+                    });
+                    ClientConnection(client, false);
+                    client.Close();
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        pictureBox.Image = pictureBox.InitialImage;
+                        textBox1.Text = "Waiting for Device...";
+                    });
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Some Exception occurs: {0}", e);
+            }
+        }
+
+        private void StartRecordingServer()
         {
             Int32 port = 13000;
             IPAddress address = IPAddress.Any;
@@ -42,18 +80,20 @@ namespace Server
 
                 while (true)
                 {
-                    this.Invoke((MethodInvoker)delegate()
-                    {
-                        pictureBox.Image = pictureBox.InitialImage;
-                    });
                     TcpClient client = server.AcceptTcpClient();
                     this.Invoke((MethodInvoker) delegate()
                     {
                         textBox1.Text = "Recording....";
                         linkLabel1.Enabled = false;
+                        linkLabel1.Links.Clear();
+                        linkLabel1.Text = "";
                     });
-                    ClientConnection(client);
+                    ClientConnection(client, true);
                     client.Close();
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        pictureBox.Image = pictureBox.InitialImage;
+                    });
                 }
             }
             catch (Exception e)
@@ -62,7 +102,7 @@ namespace Server
             }
         }
 
-        private void ClientConnection(object obj)
+        private void ClientConnection(object obj, bool streaming)
         {
             TcpClient client = (TcpClient)obj;
             NetworkStream stream = null;
@@ -72,10 +112,84 @@ namespace Server
             stream.WriteTimeout = 15000;
             stream.ReadTimeout = 15000;
 
-            ReadMessage(stream);
+            if (streaming)
+                StreamingVideo(stream);
+            else
+                UploadImages(stream);
         }
 
-        private void ReadMessage(object obj)
+        private void UploadImages(Object obj)
+        {
+            images = new List<Image>();
+            // Buffer for reading data
+            Byte[] bytes = new Byte[230454];
+            Image data = null;
+            NetworkStream stream = (NetworkStream)obj;
+
+            int totalByteRead = 0;
+            int bytesRead;
+            try
+            {
+                byte[] num_images = new byte[1];
+
+                if (stream.Read(num_images, 0, 1) == 0)
+                {
+                    throw new Exception();
+                }
+
+                if (num_images[0] == 0)
+                {
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        MessageBox.Show("Nessuna Immagine da memorizzare...");
+                        textBox1.Text = "Waiting for Device...";
+                    });
+                    return;
+                }
+                
+                int images_read = 0;
+                while ((bytesRead = stream.Read(bytes, totalByteRead, bytes.Length - totalByteRead)) != 0)
+                {
+                    totalByteRead += bytesRead;
+
+                    if (totalByteRead == 230454)
+                    {
+                        Console.WriteLine("Received Image...");
+                        data = byteArrayToImage(bytes);
+                        totalByteRead = 0;
+                        this.Invoke((MethodInvoker)delegate()
+                        {
+                            pictureBox.Image = (Image)data.Clone();
+                        });
+                        images.Add(data);
+                        if (++images_read == num_images[0])
+                            break;
+                    }
+                }
+
+                //Save images in DB
+                //TODO sostituire con una transazione SQL
+                ImagesTableAdapter ita = new ImagesTableAdapter();
+                byte[] msg = new byte[1];
+                msg[0] = 0;
+                for (int i = images_read-1; i >= 0; i--)
+                {
+                    //TODO controllare se l'operazione di inserimento va a buon fine
+                    ita.Insert(imageToByteArray(images[i]));
+                }
+
+                //Send deleting message to device
+                // msg = 0 <=> DELETE (ALL OK)
+                // msg = 1 <=> ERROR
+                stream.Write(msg, 0, 1);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Eccezione: " + e.StackTrace);
+            }
+        }
+
+        private void StreamingVideo(object obj)
         {
             images = new List<Image>();
             // Buffer for reading data
