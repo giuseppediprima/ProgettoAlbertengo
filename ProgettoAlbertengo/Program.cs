@@ -140,26 +140,32 @@ namespace ProgettoAlbertengo
                 mostraGalleria();
             if (stato == 1)
                 camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
+            if (stato == 5)
+                startUpload();
         }
 
         private void sdCard_Unmounted(SDCard sender)
         {
-            if (!sdCard.IsCardInserted)
+            if (!sdCard.IsCardInserted || !sdCard.IsCardMounted){
                 ledSd.TurnRed();
-            if (!sdCard.IsCardMounted)
-            {
+
                 if (stato == 1)
                 {
                     camera.StopStreamingBitmaps();
                     mainWindow.Background = new ImageBrush(sdBmpImage);
+                    display.SimpleGraphics.ClearNoRedraw();
                 }
-                try { sdCard.MountSDCard(); }
-                catch (Exception e) { }
-            }
-            if (stato == 1 && sdCard.IsCardMounted)
-            {
-                mainWindow.Background = new SolidColorBrush(Color.Black);
-                camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
+
+                if (sdCard.IsCardInserted)
+                {
+                    Thread t = new Thread(new ThreadStart(() =>
+                    {
+                        try { sdCard.MountSDCard(); }
+                        catch (Exception e) { }
+                    }));
+                    t.Priority = ThreadPriority.BelowNormal;
+                    t.Start();
+                }
             }
         }
 
@@ -247,9 +253,12 @@ namespace ProgettoAlbertengo
             switch (stato)
             {
                 case 1:
-                    stato = 2;
-                    camera.StopStreamingBitmaps();
-                    ShowSavePhotoButtons();
+                    if (VerifySDCard())
+                    {
+                        stato = 2;
+                        camera.StopStreamingBitmaps();
+                        ShowSavePhotoButtons();
+                    }
                     break;
             }
         }
@@ -289,10 +298,15 @@ namespace ProgettoAlbertengo
             pc.Children.Clear();
             pc.Children.Add(pcImg);
             mainWindow.Invalidate();
-
-            HideInitButtons();
             stato = 5;
-            startUpload();
+            HideInitButtons();
+                
+            if (VerifySDCard())
+            {
+                startUpload();
+            }
+            else
+                mainWindow.Background = new ImageBrush(sdBmpImage);
         }
 
         private void videoStreaming_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
@@ -467,15 +481,16 @@ namespace ProgettoAlbertengo
         private void connectUploadSocket()
         {
             Debug.Print("connectSocket started");
+            Socket socket = null;
             try
             {
                 Debug.Print("Create new Socket..");
-                s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 String ipAddr = "192.168.137.1";
                 Debug.Print("Generate EndPoint..");
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(ipAddr), 14000);
                 Debug.Print("Connect..");
-                s.Connect(remoteEP);
+                socket.Connect(remoteEP);
 
                 byte[] num_images = new byte[1];
                 if (VerifySDCard())
@@ -495,14 +510,14 @@ namespace ProgettoAlbertengo
                     if (!exist)
                     {
                         num_images[0] = 0;
-                        s.Send(num_images);
+                        socket.Send(num_images);
                         return;
                     }
 
                     immaginiGalleria = storage.ListFiles("\\SD\\");
 
                     num_images[0] = (byte)immaginiGalleria.Length;
-                    s.Send(num_images);
+                    socket.Send(num_images);
                     if (num_images[0] == 0)
                     {
                         return;
@@ -512,18 +527,18 @@ namespace ProgettoAlbertengo
 
                     for (int i = 0; i < num_images[0]; i++)
                     {
-                        if (s == null)
+                        if (socket == null)
                             return;
                         Debug.Print("Send image " + i + "...");
                         Bitmap bmp = new GT.Picture(storage.ReadFile("\\" + immaginiGalleria[indice]), GT.Picture.PictureEncoding.BMP).MakeBitmap();
                         Byte[] outputFileBuffer = new Byte[bmp.Height * bmp.Width * 3 + 54];
                         Util.BitmapToBMPFile(bmp.GetBitmap(), bmp.Width, bmp.Height, outputFileBuffer);
-                        s.Send(outputFileBuffer);
+                        socket.Send(outputFileBuffer);
                         Thread.Sleep(500);
                     }
 
                     byte[] msg = new byte[1];
-                    s.Receive(msg);
+                    socket.Receive(msg);
 
                     if (msg[0] == 0)
                     {
@@ -534,7 +549,7 @@ namespace ProgettoAlbertengo
                 else
                 {
                     num_images[0] = 0;
-                    s.Send(num_images);
+                    socket.Send(num_images);
                 }
             }
             catch (Exception e) 
@@ -543,8 +558,8 @@ namespace ProgettoAlbertengo
             }
             finally
             {
-                if (s != null)
-                    s.Close();
+                if (socket != null)
+                    socket.Close();
             }
         }
 
@@ -789,25 +804,26 @@ namespace ProgettoAlbertengo
         private void startUpload()
         {
             mainWindow.Background = new SolidColorBrush(Color.Black);
+            display.SimpleGraphics.ClearNoRedraw();
             display.SimpleGraphics.DisplayText("Upload images... Please Wait...", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.White, 50, 100);
             
             Thread t = new Thread(new ThreadStart(connectUploadSocket));
             t.Priority = ThreadPriority.BelowNormal;
             t.Start();
 
-            //TODO creare una ProgressBar...
             uint i = 0;
             while (t.IsAlive)
             {
                 //TODO sostituire con qualcos'altro perchè blocca la grafica
-                display.SimpleGraphics.DisplayEllipse(GT.Color.White, 60 + i, 150, 5, 5);
-                i += 15;
                 if (i > 200)
                 {
-                    display.SimpleGraphics.DisplayText("Upload images... Please Wait...", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.White, 50, 100);
                     display.SimpleGraphics.ClearNoRedraw();
+                    display.SimpleGraphics.DisplayText("Upload images... Please Wait...", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.White, 50, 100);
                     i -= 200;
                 }
+                display.SimpleGraphics.DisplayEllipse(GT.Color.White, 60 + i, 150, 5, 5);
+                i += 15;
+                
                 Thread.Sleep(100);
             }
 
@@ -839,6 +855,12 @@ namespace ProgettoAlbertengo
                 ledSd.BlinkRepeatedly(GT.Color.Blue);
                 GT.StorageDevice storage = sdCard.GetStorageDevice();
                 string[] dirs = storage.ListDirectories("\\");
+                if (storage == null)
+                {
+                    //TODO Sostituire con immagine d'errore
+                    mainWindow.Background = new ImageBrush(sdBmpImage);
+                    return;
+                }
                 bool exist = false;
                 foreach (string d in dirs)
                 {
@@ -906,6 +928,12 @@ namespace ProgettoAlbertengo
             if (VerifySDCard())
             {
                 GT.StorageDevice storage = sdCard.GetStorageDevice();
+                if (storage == null)
+                {
+                    //TODO Sostituire con immagine d'errore
+                    mainWindow.Background = new ImageBrush(sdBmpImage);
+                    return;
+                }
                 string[] dirs = storage.ListDirectories("\\");
                 bool exist = false;
                 foreach (string d in dirs)

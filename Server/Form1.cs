@@ -10,11 +10,13 @@ using System.Net.Sockets;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
+using System.Transactions;
 using SharpAvi.Output;
 using SharpAvi.Codecs;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using Server.MyImageDataSetTableAdapters;
+using System.Data.SqlClient;
 
 namespace Server
 {
@@ -121,6 +123,12 @@ namespace Server
         private void UploadImages(Object obj)
         {
             images = new List<Image>();
+            //Send deleting message to device
+            // msg = 0 <=> DELETE (ALL OK)
+            // msg = 1 <=> ERROR
+            byte[] msg = new byte[1];
+            msg[0] = 0;
+
             // Buffer for reading data
             Byte[] bytes = new Byte[230454];
             Image data = null;
@@ -168,24 +176,72 @@ namespace Server
                 }
 
                 //Save images in DB
-                //TODO sostituire con una transazione SQL
                 ImagesTableAdapter ita = new ImagesTableAdapter();
-                byte[] msg = new byte[1];
-                msg[0] = 0;
-                for (int i = images_read-1; i >= 0; i--)
+                        
+                using (SqlConnection connection = new SqlConnection("Data Source=WINMAC-PC\\SQLEXPRESS;Initial Catalog=MyDB;Integrated Security=True") )
                 {
-                    //TODO controllare se l'operazione di inserimento va a buon fine
-                    ita.Insert(imageToByteArray(images[i]));
-                }
+                    connection.Open();
+                        
+                    SqlCommand command = connection.CreateCommand();
+                    SqlTransaction transaction;
 
-                //Send deleting message to device
-                // msg = 0 <=> DELETE (ALL OK)
-                // msg = 1 <=> ERROR
+                    // Start a local transaction.
+                    transaction = connection.BeginTransaction("Transaction");
+
+                    // Must assign both transaction object and connection 
+                    // to Command object for a pending local transaction
+                    command.Connection = connection;
+                    command.Transaction = transaction;
+
+                    try
+                    {
+                        for (int i = images_read - 1; i >= 0; i--)
+                        {
+                            command.CommandText = "Insert into Images (image) VALUES (@image)";
+                            byte[] img= imageToByteArray(images[i]);
+                            command.Parameters.Add("@image", SqlDbType.VarBinary, img.Length).Value = img;
+                            command.ExecuteNonQuery();
+                        }
+
+                        // Attempt to commit the transaction.
+                        transaction.Commit();
+                        Console.WriteLine("Both records are written to database.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Commit Exception Type: {0}", ex.GetType());
+                        Console.WriteLine("  Message: {0}", ex.Message);
+
+                        // Attempt to roll back the transaction. 
+                        try
+                        {
+                            transaction.Rollback();
+                        }
+                        catch (Exception ex2)
+                        {
+                            // This catch block will handle any errors that may have occurred 
+                            // on the server that would cause the rollback to fail, such as 
+                            // a closed connection.
+                            Console.WriteLine("Rollback Exception Type: {0}", ex2.GetType());
+                            Console.WriteLine("  Message: {0}", ex2.Message);
+                        } 
+                        msg[0] = 1;
+                        stream.Write(msg, 0, 1);
+                        return;
+                    }
+                    /*for (int i = images_read - 1; i >= 0; i--)
+                    {
+                        ita.Insert(imageToByteArray(images[i]));
+                    }*/
+                }
+                
                 stream.Write(msg, 0, 1);
             }
             catch (Exception e)
             {
                 Console.WriteLine("Eccezione: " + e.StackTrace);
+                msg[0] = 1;
+                stream.Write(msg, 0, 1);
             }
         }
 
