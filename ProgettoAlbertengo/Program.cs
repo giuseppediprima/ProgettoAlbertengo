@@ -215,7 +215,17 @@ namespace ProgettoAlbertengo
                     mainWindow.Background = new SolidColorBrush(Color.Black);
                     stato = 0;
                     ShowInitButtons();
-                    Thread t = new Thread(new ThreadStart(() => { if (s != null) s.Close(); }));
+                    Thread t = new Thread(new ThreadStart(() => {
+
+                        try
+                        {
+                            if (s != null) s.Close();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.Print(e.StackTrace);
+                        }
+                    }));
                     t.Priority = ThreadPriority.BelowNormal;
                     t.Start();
                     break;
@@ -470,12 +480,18 @@ namespace ProgettoAlbertengo
                 Debug.Print("Create new Socket..");
                 s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 String ipAddr = "192.168.137.1";
+               
                 Debug.Print("Generate EndPoint..");
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(ipAddr), 13000);
                 Debug.Print("Connect..");
                 s.Connect(remoteEP);
+               
+                Debug.Print("Connected!");
             }
-            catch (Exception e) { }
+            catch (Exception e) {
+                Debug.Print(e.StackTrace);    
+                s = null;
+            }
         }
 
         private void connectUploadSocket()
@@ -795,10 +811,15 @@ namespace ProgettoAlbertengo
             Bitmap tmp = new Bitmap(320, 240);
             tmp.DrawText("Press Back Button to end", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.Red, 50, 100);
             mainWindow.Background = new ImageBrush(tmp);
-            camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
+            
             Thread t = new Thread(new ThreadStart(connectStreamSocket));
             t.Priority = ThreadPriority.Normal;
             t.Start();
+            while (t.IsAlive)
+                Thread.Sleep(200);
+
+            camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
+            
         }
 
         private void startUpload()
@@ -855,12 +876,6 @@ namespace ProgettoAlbertengo
                 ledSd.BlinkRepeatedly(GT.Color.Blue);
                 GT.StorageDevice storage = sdCard.GetStorageDevice();
                 string[] dirs = storage.ListDirectories("\\");
-                if (storage == null)
-                {
-                    //TODO Sostituire con immagine d'errore
-                    mainWindow.Background = new ImageBrush(sdBmpImage);
-                    return;
-                }
                 bool exist = false;
                 foreach (string d in dirs)
                 {
@@ -928,12 +943,6 @@ namespace ProgettoAlbertengo
             if (VerifySDCard())
             {
                 GT.StorageDevice storage = sdCard.GetStorageDevice();
-                if (storage == null)
-                {
-                    //TODO Sostituire con immagine d'errore
-                    mainWindow.Background = new ImageBrush(sdBmpImage);
-                    return;
-                }
                 string[] dirs = storage.ListDirectories("\\");
                 bool exist = false;
                 foreach (string d in dirs)

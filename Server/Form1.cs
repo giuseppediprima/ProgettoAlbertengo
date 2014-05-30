@@ -22,15 +22,18 @@ namespace Server
 {
     public partial class Form1 : Form
     {
-        private TcpListener server = null;
+        
         private List<Image> images;
+        private ImageList listaFirstFrame;
         int width = 320;
         int height = 240;
 
         public Form1()
         {
             InitializeComponent();
-            pictureBox.Image = pictureBox.InitialImage;
+            pictureBox1.Image = pictureBox1.InitialImage;
+            listaFirstFrame = new ImageList();
+            
 
             new Thread(new ThreadStart(StartRecordingServer)).Start();
 
@@ -43,7 +46,7 @@ namespace Server
             IPAddress address = IPAddress.Any;
             try
             {
-                server = new TcpListener(address, port);
+                TcpListener server = new TcpListener(address, port);
                 server.Start();
 
                 while (true)
@@ -51,17 +54,16 @@ namespace Server
                     TcpClient client = server.AcceptTcpClient();
                     this.Invoke((MethodInvoker)delegate()
                     {
-                        textBox1.Text = "Upload Images....";
-                        linkLabel1.Enabled = false;
-                        linkLabel1.Links.Clear();
-                        linkLabel1.Text = "";
+                        label2.Text = "Upload Images...";
+                       
+                        
                     });
                     ClientConnection(client, false);
                     client.Close();
                     this.Invoke((MethodInvoker)delegate()
                     {
-                        pictureBox.Image = pictureBox.InitialImage;
-                        textBox1.Text = "Waiting for Device...";
+                        pictureBox1.Image = pictureBox1.InitialImage;
+                        label2.Text = "Waiting for Device...";
                     });
                 }
             }
@@ -77,7 +79,7 @@ namespace Server
             IPAddress address = IPAddress.Any;
             try
             {
-                server = new TcpListener(address, port);
+                TcpListener  server = new TcpListener(address, port);
                 server.Start();
 
                 while (true)
@@ -85,16 +87,14 @@ namespace Server
                     TcpClient client = server.AcceptTcpClient();
                     this.Invoke((MethodInvoker) delegate()
                     {
-                        textBox1.Text = "Recording....";
-                        linkLabel1.Enabled = false;
-                        linkLabel1.Links.Clear();
-                        linkLabel1.Text = "";
+                        label2.Text = "Recording....";
+                        
                     });
                     ClientConnection(client, true);
                     client.Close();
                     this.Invoke((MethodInvoker)delegate()
                     {
-                        pictureBox.Image = pictureBox.InitialImage;
+                        pictureBox1.Image = pictureBox1.InitialImage;
                     });
                 }
             }
@@ -150,11 +150,11 @@ namespace Server
                     this.Invoke((MethodInvoker)delegate()
                     {
                         MessageBox.Show("Nessuna Immagine da memorizzare...");
-                        textBox1.Text = "Waiting for Device...";
+                        label2.Text = "Waiting for Device...";
                     });
                     return;
                 }
-                
+
                 int images_read = 0;
                 while ((bytesRead = stream.Read(bytes, totalByteRead, bytes.Length - totalByteRead)) != 0)
                 {
@@ -167,7 +167,7 @@ namespace Server
                         totalByteRead = 0;
                         this.Invoke((MethodInvoker)delegate()
                         {
-                            pictureBox.Image = (Image)data.Clone();
+                            pictureBox1.Image = (Image)data.Clone();
                         });
                         images.Add(data);
                         if (++images_read == num_images[0])
@@ -176,12 +176,12 @@ namespace Server
                 }
 
                 //Save images in DB
-                ImagesTableAdapter ita = new ImagesTableAdapter();
-                        
-                using (SqlConnection connection = new SqlConnection("Data Source=WINMAC-PC\\SQLEXPRESS;Initial Catalog=MyDB;Integrated Security=True") )
+               
+
+                using (SqlConnection connection = new SqlConnection("Data Source=WINMAC-PC\\SQLEXPRESS;Initial Catalog=MyDB;Integrated Security=True"))
                 {
                     connection.Open();
-                        
+
                     SqlCommand command = connection.CreateCommand();
                     SqlTransaction transaction;
 
@@ -198,7 +198,7 @@ namespace Server
                         for (int i = images_read - 1; i >= 0; i--)
                         {
                             command.CommandText = "Insert into Images (image) VALUES (@image)";
-                            byte[] img= imageToByteArray(images[i]);
+                            byte[] img = imageToByteArray(images[i]);
                             command.Parameters.Add("@image", SqlDbType.VarBinary, img.Length).Value = img;
                             command.ExecuteNonQuery();
                         }
@@ -224,17 +224,14 @@ namespace Server
                             // a closed connection.
                             Console.WriteLine("Rollback Exception Type: {0}", ex2.GetType());
                             Console.WriteLine("  Message: {0}", ex2.Message);
-                        } 
+                        }
                         msg[0] = 1;
                         stream.Write(msg, 0, 1);
                         return;
                     }
-                    /*for (int i = images_read - 1; i >= 0; i--)
-                    {
-                        ita.Insert(imageToByteArray(images[i]));
-                    }*/
+                  
                 }
-                
+
                 stream.Write(msg, 0, 1);
             }
             catch (Exception e)
@@ -268,7 +265,7 @@ namespace Server
                         totalByteRead = 0;
                         this.Invoke((MethodInvoker)delegate()
                         {
-                            pictureBox.Image = (Image)data.Clone();
+                            pictureBox1.Image = (Image)data.Clone();
                         });
                         images.Add(data);
                     }
@@ -282,33 +279,71 @@ namespace Server
             {
                 this.Invoke((MethodInvoker)delegate()
                 {
-                    textBox1.Text = "Creating Video File...";
+                    label2.Text = "Creating Video File...";
                 });
-                AviWriter writer = new AviWriter("prova.avi");
-                writer.FramesPerSecond = 1;
-                IVideoEncoder encoder = new RgbVideoEncoder(width, height);
-                AsyncVideoStreamWrapper videoStream = writer.AddVideoStream().WithEncoder(encoder).Async();
-                videoStream.Name = "MyVideoStream";
-                videoStream.Width = width;
-                videoStream.Height = height;
-                for (int i = 0; i < images.Count; i++) {
-                    byte[] image = new byte[width * height * 4];
-                    GetByteArray((Bitmap)images[i], image);
-                    Console.WriteLine("Image size: " + image.Length);
-                    videoStream.BeginWriteFrame(true, image, 0, image.Length);
-                    videoStream.EndWriteFrame();
-                }
-                writer.Close();
-                this.Invoke((MethodInvoker)delegate()
+
+                try
                 {
-                    textBox1.Text = "Waiting for Device...";
-                    linkLabel1.Enabled = true;
-                    linkLabel1.Text = "Visualizza il Video o invialo per E-Mail...";
-                    //linkLabel1.LinkArea = new System.Windows.Forms.LinkArea(14, 5);
-                    linkLabel1.Links.Add(14, 5, "video");
-                    linkLabel1.Links.Add(34, 6, "email");
-                });
+                    Image tmpImage = (Image)images[0].Clone();
+                    String path=GetNextFileName();
+                    AviWriter writer = new AviWriter(path);
+                    writer.FramesPerSecond = 1;
+                    IVideoEncoder encoder = new RgbVideoEncoder(width, height);
+                    AsyncVideoStreamWrapper videoStream = writer.AddVideoStream().WithEncoder(encoder).Async();
+                    videoStream.Name = "MyVideoStream";
+                    videoStream.Width = width;
+                    videoStream.Height = height;
+                    for (int i = 0; i < images.Count; i++)
+                    {
+                        byte[] image = new byte[width * height * 4];
+                        GetByteArray((Bitmap)images[i], image);
+                        Console.WriteLine("Image size: " + image.Length);
+                        videoStream.BeginWriteFrame(true, image, 0, image.Length);
+                        videoStream.EndWriteFrame();
+                    }
+                    writer.Close();
+                    tmpImage.Save(path.Replace("avi","bmp"), ImageFormat.Bmp);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.StackTrace);
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        label2.Text = "Error Saving Video...";
+
+                    });
+
+                    Thread.Sleep(1000);
+                }
+                finally
+                {
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        label2.Text = "Waiting for Device...";
+
+                    });
+                }
+
             }
+        }
+
+        private string GetNextFileName()
+        {
+            String fileName = DateTime.Now.ToString(@"dd-MM-yyyy_HH.mm.ss")+".avi";
+            try
+            {
+                if (!Directory.Exists("./Video/"))
+                {
+
+                    Directory.CreateDirectory("./Video/");
+                }
+            }
+            catch (Exception e)
+            {
+                return "./"+fileName;
+            }
+
+            return "./Video/" + fileName;
         }
 
         public Image byteArrayToImage(byte[] byteArrayIn)
@@ -337,6 +372,97 @@ namespace Server
             }
         }
 
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            txtSendTo.Text = "";
+            txtMessage.Text = "";
+            txtSubjectLine.Text = "";
+        }
+
+        private void btnSend_Click(object sender, EventArgs e)
+        {
+            if (String.IsNullOrEmpty(txtSendTo.Text))
+            {
+                MessageBox.Show("Missing recipient address.", "Email Error");
+                return;
+            }
+
+            if (String.IsNullOrEmpty(txtSendFrom.Text))
+            {
+                MessageBox.Show("Missing sender address.", "Email Error");
+                return;
+            }
+
+            if (String.IsNullOrEmpty(txtSubjectLine.Text))
+            {
+                MessageBox.Show("Missing subject line.", "Email Error");
+                return;
+            }
+
+            if (String.IsNullOrEmpty(txtMessage.Text))
+            {
+                MessageBox.Show("Missing message.", "Email Error");
+                return;
+            }
+
+            
+            /*
+            string[] arr = txtAttachments.Text.Split(';');
+            alAttachments = new ArrayList();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                if (!String.IsNullOrEmpty(arr[i].ToString().Trim()))
+                {
+                    alAttachments.Add(arr[i].ToString().Trim());
+                }
+            }
+
+            this.Hide();
+            string result;
+            if (alAttachments.Count > 0)
+                result = Emailer.SendMessageWithAttachment(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text, alAttachments);
+            else
+                result = Emailer.SendMessage(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text);
+            MessageBox.Show(result, "Email Transmittal");*/
+
+            MessageBox.Show("Email Sent");
+             
+        
+        }
+
+        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            //bottone Video Gallery carica i video nella listview1
+            listView1.Items.Clear();
+            listaFirstFrame.Images.Clear();
+            String[] ImageFiles = Directory.GetFiles("./Video/");
+            foreach (var file in ImageFiles)
+            {
+                //Add images to Imagelist
+                if(file.EndsWith("bmp"))
+                   listaFirstFrame.Images.Add(Image.FromFile(file));
+            }
+            listView1.View = View.LargeIcon;
+            listaFirstFrame.ImageSize = new Size(160, 120);
+            listView1.LargeImageList = listaFirstFrame;
+            
+            for (int j = 0; j < listaFirstFrame.Images.Count; j++)
+            {
+                ListViewItem item = new ListViewItem();
+                item.ImageIndex = j;
+                this.listView1.Items.Add(item);
+            }
+
+
+        }
+
+
+        /*
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             // Determine which link was clicked within the LinkLabel. 
@@ -356,6 +482,6 @@ namespace Server
                 t.SetApartmentState(ApartmentState.STA);
                 t.Start();
             }
-        }
+        }*/
     }
 }

@@ -9,3 +9,14 @@ C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Ser
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Server.pdb
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\bin\Release\SharpAvi.xml
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\ProgettoAlbertengo\Server\obj\Release\Server.frmTestEmail.resources
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\bin\Release\Server.exe.config
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.exe
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.pdb
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\bin\Release\Server.exe
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\bin\Release\Server.pdb
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\bin\Release\SharpAvi.xml
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.csprojResolveAssemblyReference.cache
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.Form1.resources
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.frmTestEmail.resources
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.Properties.Resources.resources
+C:\Users\Antonio\Desktop\ProgettoAlbertengo\Server\obj\Release\Server.csproj.GenerateResource.Cache
