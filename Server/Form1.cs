@@ -139,7 +139,7 @@ namespace Server
             msg[0] = 0;
 
             // Buffer for reading data
-            Byte[] bytes = new Byte[230454];
+            byte[] bytes = new byte[230454];
             Image data = null;
             NetworkStream stream = (NetworkStream)obj;
 
@@ -178,40 +178,36 @@ namespace Server
                         {
                             pictureBox1.Image = (Image)data.Clone();
                         });
-                        images.Add(data);
+                        images.Add((Image)data.Clone());
                         if (++images_read == num_images[0])
                             break;
+                        bytes = new byte[230454];
                     }
                 }
 
                 //Save images in DB
-               
 
                 using (SqlConnection connection = new SqlConnection("Data Source=WINMAC-PC\\SQLEXPRESS;Initial Catalog=MyDB;Integrated Security=True"))
                 {
                     connection.Open();
-
                     SqlCommand command = connection.CreateCommand();
                     SqlTransaction transaction;
-
                     // Start a local transaction.
                     transaction = connection.BeginTransaction("Transaction");
-
                     // Must assign both transaction object and connection 
                     // to Command object for a pending local transaction
                     command.Connection = connection;
                     command.Transaction = transaction;
-
                     try
                     {
+                        command.CommandText = "Insert into Images (image) VALUES (@image)";
+                        command.Parameters.Add("@image", SqlDbType.VarBinary);
                         for (int i = images_read - 1; i >= 0; i--)
                         {
-                            command.CommandText = "Insert into Images (image) VALUES (@image)";
                             byte[] img = imageToByteArray(images[i]);
-                            command.Parameters.Add("@image", SqlDbType.VarBinary, img.Length).Value = img;
+                            command.Parameters["@image"].Value = img;
                             command.ExecuteNonQuery();
                         }
-
                         // Attempt to commit the transaction.
                         transaction.Commit();
                         Console.WriteLine("Both records are written to database.");
@@ -238,7 +234,6 @@ namespace Server
                         stream.Write(msg, 0, 1);
                         return;
                     }
-                  
                 }
 
                 stream.Write(msg, 0, 1);
@@ -248,6 +243,14 @@ namespace Server
                 Console.WriteLine("Eccezione: " + e.StackTrace);
                 msg[0] = 1;
                 stream.Write(msg, 0, 1);
+            }
+            finally
+            {
+                this.Invoke((MethodInvoker)delegate()
+                {
+                    if (areImages)
+                        button5_Click(null, null);
+                });
             }
         }
 
@@ -319,9 +322,7 @@ namespace Server
                     this.Invoke((MethodInvoker)delegate()
                     {
                         label2.Text = "Error Saving Video...";
-
                     });
-
                     Thread.Sleep(1000);
                 }
                 finally
@@ -329,10 +330,13 @@ namespace Server
                     this.Invoke((MethodInvoker)delegate()
                     {
                         label2.Text = "Waiting for Device...";
-
                     });
                 }
-
+                this.Invoke((MethodInvoker)delegate()
+                {
+                    if (!areImages)
+                        button1_Click(null, null);
+                });
             }
         }
 
@@ -428,34 +432,36 @@ namespace Server
 
             hideSendButton();
 
-            if (attachments.Count != 0)
-            {
-                string zipFile = createZipFile();
-                if (zipFile == null)
-                {
-                    MessageBox.Show("Error creating attachments zip file");
-                    showSendButton();
-                    return;
-                }
-                attachments.Clear();
-                attachments.Add(zipFile);
-            }
-
             new Thread(new ThreadStart(() =>
             {
                 try
                 {
+                    if (attachments.Count != 0)
+                    {
+                        string zipFile = createZipFile();
+                        if (zipFile == null)
+                        {
+                            MessageBox.Show("Error creating attachments zip file");
+                            showSendButton();
+                            return;
+                        }
+                        attachments.Clear();
+                        attachments.Add(zipFile);
+                    }
+
                     string result;
                     if (attachments.Count > 0)
+                    {
                         result = Emailer.SendMessageWithAttachment(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text, attachments);
+                        File.Delete((string)attachments[0]);
+                    }
                     else
                         result = Emailer.SendMessage(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text);
                     this.Invoke((MethodInvoker)delegate() { MessageBox.Show(result, "Email Transmittal"); });
-                    File.Delete((string)attachments[0]);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.StackTrace);
+                    Console.WriteLine("Exception: {0}\n{1}", ex.Message, ex.StackTrace);
                 }
                 finally
                 {
@@ -514,6 +520,7 @@ namespace Server
         private void button1_Click(object sender, EventArgs e)
         {
             areImages = false;
+            flowLayoutPanel1.Hide();
             //bottone Video Gallery carica i video nella listview1
             flowLayoutPanel1.Controls.Clear();
             
@@ -528,8 +535,14 @@ namespace Server
                     if (attachments.Contains(file.Replace("bmp", "avi")))
                         panel.checkBox1.Checked = true;
                     panel.checkBox1.CheckedChanged += checkBox1_CheckedChanged;
+                    panel.button2.Click += button2_Click;
                 }
             }
+            if (flowLayoutPanel1.Controls.Count == 0)
+                flowLayoutPanel1.BackgroundImage = (Image)(resources.GetObject("flowLayoutPanel1.BackgroundImage"));
+            else
+                flowLayoutPanel1.BackgroundImage = null;
+            flowLayoutPanel1.Show();
         }
 
         void checkBox1_CheckedChanged(object sender, EventArgs e)
@@ -578,10 +591,15 @@ namespace Server
         private void button5_Click(object sender, EventArgs e)
         {
             areImages = true;
+            flowLayoutPanel1.Hide();
             flowLayoutPanel1.Controls.Clear();
             
             ImagesTableAdapter ita = new ImagesTableAdapter();
             Server.MyImageDataSet.ImagesDataTable idt = ita.GetData();
+            if (idt.Rows.Count == 0)
+                flowLayoutPanel1.BackgroundImage = (Image)(resources.GetObject("flowLayoutPanel1.BackgroundImage"));
+            else
+                flowLayoutPanel1.BackgroundImage = null;
 
             foreach (System.Data.DataRow image in idt.Rows)
             {
@@ -591,7 +609,50 @@ namespace Server
                 if (attachments.Contains(tag))
                     panel.checkBox1.Checked = true;
                 panel.checkBox1.CheckedChanged += checkBox1_CheckedChanged;
+                panel.button2.Click += button2_Click;
             }
+            flowLayoutPanel1.Show();
+        }
+
+        void button2_Click(object sender, EventArgs e)
+        {
+            Button btn = (Button)sender;
+            foreach (Control c in btn.Parent.Controls)
+                if (c.GetType() == typeof(CheckBox))
+                    if (((CheckBox)c).Checked)
+                        ((CheckBox)c).Checked = false;
+            if (areImages)
+            {
+                ImagesTableAdapter ita = new ImagesTableAdapter();
+                try
+                {
+                    int result = ita.Delete(long.Parse(((string)btn.Tag).Replace("Image: ", "")));
+                    if (result == 0)
+                        throw new Exception("No rows affected");
+                    flowLayoutPanel1.Controls.Remove(btn.Parent);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Sorry!!!\nError occurs deleting File.\n" + ex.Message, "Error...");
+                }
+            }
+            else
+            {
+                string path = ((string)btn.Tag).Replace("Video: ", "./Video/");
+                try
+                {
+                    btn.Parent.BackgroundImage.Dispose();
+                    File.Delete(path);
+                    File.Delete(path.Replace("bmp", "avi"));
+                    flowLayoutPanel1.Controls.Remove(btn.Parent);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Sorry!!!\nError occurs deleting File.\n" + ex.Message, "Error...");
+                }
+            }
+            if (flowLayoutPanel1.Controls.Count == 0)
+                flowLayoutPanel1.BackgroundImage = (Image)(resources.GetObject("flowLayoutPanel1.BackgroundImage"));
         }
 
         private string getConvertedTotalAttachmentSize()

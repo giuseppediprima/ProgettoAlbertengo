@@ -181,4 +181,10 @@
   <data name="error" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\error.bmp;System.Byte[], mscorlib, Version=4.2.0.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
+  <data name="labelConfirmImg" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\labelConfirmImg.bmp;System.Byte[], mscorlib, Version=4.2.0.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="teschio" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\teschio.bmp;System.Byte[], mscorlib, Version=4.2.0.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
 </root>

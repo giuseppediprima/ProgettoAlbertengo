@@ -1,0 +1,16 @@
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\le\dotnetwarrior.NetMF.dll
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\be\dotnetwarrior.NetMF.dll
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\le\dotnetwarrior.NetMF.pdb
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\be\dotnetwarrior.NetMF.pdb
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\dotnetwarrior.NetMF.dll
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\dotnetwarrior.NetMF.pdb
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\le\dotnetwarrior.NetMF.pe
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\le\dotnetwarrior.NetMF.pdbx
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\be\dotnetwarrior.NetMF.pe
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\bin\Release\be\dotnetwarrior.NetMF.pdbx
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\obj\Release\be\dotnetwarrior.NetMF.pe
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\obj\Release\be\dotnetwarrior.NetMF.pdbx
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\obj\Release\le\dotnetwarrior.NetMF.pe
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\obj\Release\le\dotnetwarrior.NetMF.pdbx
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\obj\Release\dotnetwarrior.NetMF.dll
+C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF\obj\Release\dotnetwarrior.NetMF.pdb

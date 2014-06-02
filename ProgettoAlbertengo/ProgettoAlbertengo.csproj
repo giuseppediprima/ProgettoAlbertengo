@@ -201,4 +201,24 @@
   <ItemGroup>
     <None Include="Resources\error.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dotnetwarrior.NetMF.Game\dotnetwarrior.NetMF.Game.csproj">
+      <Project>{936EE92D-5A1F-4F2B-B867-D7E5EEE223B1}</Project>
+      <Name>dotnetwarrior.NetMF.Game</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\dotnetwarrior.NetMF\dotnetwarrior.NetMF.csproj">
+      <Project>{6B0E1A65-A063-4727-AAE2-A4B91A93FFA0}</Project>
+      <Name>dotnetwarrior.NetMF</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Pacman\Pacman.csproj">
+      <Project>{DDF9E66D-0064-4795-8723-099A242BFC87}</Project>
+      <Name>Pacman</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\labelConfirmImg.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\teschio.bmp" />
+  </ItemGroup>
 </Project>

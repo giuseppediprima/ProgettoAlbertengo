@@ -15,6 +15,7 @@ namespace Server
         public CheckBox checkBox1 {get; private set;}
         public Label label1 { get; private set; }
         public Button button1 { get; private set; }
+        public Button button2 { get; private set; }
         private string path;
         private Image bitmap;
 
@@ -34,6 +35,7 @@ namespace Server
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PanelItem));
             this.button1 = new System.Windows.Forms.Button();
+            this.button2 = new System.Windows.Forms.Button();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
@@ -59,6 +61,28 @@ namespace Server
             this.button1.Click += new System.EventHandler(this.button1_Click);
             this.button1.MouseEnter += new System.EventHandler(this.showButton);
             this.button1.MouseLeave += new System.EventHandler(this.showButton);
+            // 
+            // button2
+            // 
+            this.button2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button2.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("trash-icon")));
+            this.button2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.button2.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.button2.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button2.FlatAppearance.BorderSize = 0;
+            this.button2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button2.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button2.Location = new System.Drawing.Point(175, 5);
+            this.button2.Name = "button2";
+            this.button2.Tag = path;
+            this.button2.Size = new System.Drawing.Size(30, 30);
+            this.button2.TabIndex = 0;
+            this.button2.UseVisualStyleBackColor = false;
+            this.button2.Visible = false;
+            this.button2.MouseEnter += new System.EventHandler(this.showButton);
+            this.button2.MouseLeave += new System.EventHandler(this.showButton);
             // 
             // checkBox1
             // 
@@ -99,6 +123,7 @@ namespace Server
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button1);
+            this.Controls.Add(this.button2);
             this.Size = new System.Drawing.Size(210, 156);
             this.MouseEnter += new System.EventHandler(this.showButton);
             this.MouseLeave += new System.EventHandler(this.hideButton);
@@ -110,6 +135,7 @@ namespace Server
         private void showButton(object sender, EventArgs e)
         {
             button1.Show();
+            button2.Show();
         }
 
         private void hideButton(object sender, EventArgs e)
@@ -117,8 +143,11 @@ namespace Server
             Point p = this.PointToClient(MousePosition);
             int mouseX = p.X;
             int mouseY = p.Y;
-            if(mouseX <= 0 || mouseX >= this.Width || mouseY <= 0 || mouseY >= this.Height)
+            if (mouseX <= 0 || mouseX >= this.Width || mouseY <= 0 || mouseY >= this.Height)
+            {
                 button1.Hide();
+                button2.Hide();
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -144,7 +173,6 @@ namespace Server
             else
                 System.Diagnostics.Process.Start(path.Replace("Video: ", ".\\Video\\").Replace("bmp", "avi"));
         }
-
 
     }
 }

@@ -14,10 +14,17 @@ using Gadgeteer.Modules.GHIElectronics;
 using GHI.Premium.System;
 using GHI.Premium.Net;
 
+using Pacman;
+using dotnetwarrior.NetMF.Diagnostics;
+using dotnetwarrior.NetMF.Game;
+using System.Reflection;
+
 namespace ProgettoAlbertengo
 {
     public partial class Program
     {
+        private PacmanGame _pacmanGame = null;
+
         //Stato d'avanzamento del programma
         static int stato = 0;
         Window mainWindow;
@@ -44,7 +51,6 @@ namespace ProgettoAlbertengo
         StackPanel buttonSavePanel;
         StackPanel confirmSave;
         StackPanel cancelSave;
-        
 
         Image labelSavePhotoImg;
         Image confirmSaveImg;
@@ -52,6 +58,17 @@ namespace ProgettoAlbertengo
         Image confirmSaveImgPressed;
         Image cancelSaveImgPressed;
 
+        StackPanel confirmWidowPanel;
+        StackPanel labelConfirmMessage;
+        StackPanel buttonSavePanel1;
+        StackPanel confirmSave1;
+        StackPanel cancelSave1;
+
+        Image labelConfirmImg;
+        Image confirmSaveImg1;
+        Image cancelSaveImg1;
+        Image confirmSaveImgPressed1;
+        Image cancelSaveImgPressed1;
 
         StackPanel trashPanel;
         Image emptyTrash;
@@ -59,6 +76,7 @@ namespace ProgettoAlbertengo
 
         Bitmap sdBmpImage = new Bitmap(Resources.GetBytes(Resources.BinaryResources.SD_card), Bitmap.BitmapImageType.Bmp);
         Bitmap noBmpImage = new Bitmap(Resources.GetBytes(Resources.BinaryResources.no_image), Bitmap.BitmapImageType.Bmp);
+        Bitmap skull = new Bitmap(Resources.GetBytes(Resources.BinaryResources.teschio), Bitmap.BitmapImageType.Bmp);
         Bitmap currentBitmapData;
         GT.Timer timer;
 
@@ -84,6 +102,7 @@ namespace ProgettoAlbertengo
             backButton.ButtonPressed += new Button.ButtonEventHandler(backButton_Pressed);
             confirmButton.ButtonPressed += new Button.ButtonEventHandler(confirmButton_Pressed);
             camera.BitmapStreamed += new Camera.BitmapStreamedEventHandler(camera_BitmapStreamed);
+            joystick.JoystickPressed += new Joystick.JoystickEventHandler(joystick_JoystickPressed);
             timer = new GT.Timer(100);
             timer.Tick += timer_Tick;
             ledSd.TurnRed();
@@ -94,6 +113,16 @@ namespace ProgettoAlbertengo
         }
         
         // // // // // // // START EVENT HANDLERS // // // // // // // // //
+
+        void joystick_JoystickPressed(Joystick sender, Joystick.JoystickState state)
+        {
+            if (stato == 0)
+            {
+                stato = 6;
+                ShowConfirmWindowButtons();
+            }
+        }
+        
         private void ethernet_NetworkUp(GTM.Module.NetworkModule sender, GTM.Module.NetworkModule.NetworkState state)
         {
             Debug.Print("Ethernet Network UP");
@@ -244,8 +273,16 @@ namespace ProgettoAlbertengo
                     t.Priority = ThreadPriority.BelowNormal;
                     t.Start();
                     break;
-
+                case 6:
+                    HideConfirmWindowButtons();
+                    stato = 0;
+                    mainWindow.Background = new SolidColorBrush(Color.Black);
+                    ShowInitButtons();
+                    break;
+                case 7:
+                    break;
                 default:
+                    mainWindow.Background = new SolidColorBrush(Color.Black);
                     ShowInitButtons();
                     break;
             }
@@ -269,6 +306,9 @@ namespace ProgettoAlbertengo
                     t.Start();
                     ShowInitButtons();
                     stato = 0;
+                    break;
+                case 6:
+                    confirmSave1_TouchUp(null, null);
                     break;
             }
         }
@@ -420,6 +460,45 @@ namespace ProgettoAlbertengo
             mainWindow.Invalidate();
         }
 
+        private void cancelSave1_TouchUp(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
+        {
+            cancelSave1.Children.Clear();
+            cancelSave1.Children.Add(cancelSaveImg1);
+            mainWindow.Invalidate();
+
+            HideConfirmWindowButtons();
+            stato = 0;
+            ShowInitButtons();
+        }
+
+        private void cancelSave1_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
+        {
+            cancelSave1.Children.Clear();
+            cancelSave1.Children.Add(cancelSaveImgPressed1);
+            mainWindow.Invalidate();
+        }
+
+        private void confirmSave1_TouchUp(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
+        {
+            confirmSave1.Children.Clear();
+            confirmSave1.Children.Add(confirmSaveImg1);
+            mainWindow.Invalidate();
+
+            stato = 7;
+            var surface = (Bitmap)(display.SimpleGraphics.GetType().GetField("_display", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(display.SimpleGraphics));
+
+            _pacmanGame = new PacmanGame(surface);
+            _pacmanGame.InputManager.AddInputProvider(new GhiJoystickInputProvider(joystick));
+            _pacmanGame.Initialize();
+        }
+
+        private void confirmSave1_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
+        {
+            confirmSave1.Children.Clear();
+            confirmSave1.Children.Add(confirmSaveImgPressed1);
+            mainWindow.Invalidate();
+        }
+
         private void trashPanel_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
         {
             trashPanel.Children.Clear();
@@ -562,11 +641,10 @@ namespace ProgettoAlbertengo
                         if (socket == null)
                             return;
                         Debug.Print("Send image " + i + "...");
-                        Bitmap bmp = new GT.Picture(storage.ReadFile("\\" + immaginiGalleria[indice]), GT.Picture.PictureEncoding.BMP).MakeBitmap();
+                        Bitmap bmp = new GT.Picture(storage.ReadFile("\\" + immaginiGalleria[i]), GT.Picture.PictureEncoding.BMP).MakeBitmap();
                         Byte[] outputFileBuffer = new Byte[bmp.Height * bmp.Width * 3 + 54];
                         Util.BitmapToBMPFile(bmp.GetBitmap(), bmp.Width, bmp.Height, outputFileBuffer);
                         socket.Send(outputFileBuffer);
-                        Thread.Sleep(500);
                     }
 
                     byte[] msg = new byte[1];
@@ -659,6 +737,7 @@ namespace ProgettoAlbertengo
             SetupInitWindow();
             SetupTrashPanel();
             SetupSavePhotoWindow();
+            SetupConfirmWindow();
 
             ShowInitButtons();
 
@@ -720,6 +799,43 @@ namespace ProgettoAlbertengo
             cancelSave.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(cancelSave_TouchUp);
         }
 
+        private void SetupConfirmWindow()
+        {
+            MakeTrasparentImg1();
+
+            confirmWidowPanel = new StackPanel(Orientation.Vertical);
+            labelConfirmMessage = new StackPanel(Orientation.Horizontal);
+            buttonSavePanel1 = new StackPanel(Orientation.Horizontal);
+            confirmSave1 = new StackPanel(Orientation.Horizontal);
+            cancelSave1 = new StackPanel(Orientation.Horizontal);
+
+            confirmWidowPanel.SetMargin(6);
+            labelConfirmMessage.SetMargin(6);
+            buttonSavePanel1.SetMargin(6);
+            confirmSave1.SetMargin(6);
+            cancelSave1.SetMargin(6);
+
+            labelConfirmMessage.HorizontalAlignment = HorizontalAlignment.Center;
+            buttonSavePanel1.HorizontalAlignment = HorizontalAlignment.Center;
+            confirmSave1.HorizontalAlignment = HorizontalAlignment.Center;
+            cancelSave1.HorizontalAlignment = HorizontalAlignment.Center;
+
+            labelConfirmMessage.Children.Add(labelConfirmImg);
+            confirmSave1.Children.Add(confirmSaveImg1);
+            cancelSave1.Children.Add(cancelSaveImg1);
+
+            buttonSavePanel1.Children.Add(confirmSave1);
+            buttonSavePanel1.Children.Add(cancelSave1);
+            confirmWidowPanel.Children.Add(labelConfirmMessage);
+            confirmWidowPanel.Children.Add(buttonSavePanel1);
+
+            confirmSave1.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(confirmSave1_TouchDown);
+            cancelSave1.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(cancelSave1_TouchDown);
+
+            confirmSave1.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(confirmSave1_TouchUp);
+            cancelSave1.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(cancelSave1_TouchUp);
+        }
+
         private void MakeTrasparentImg()
         {
             Bitmap labelSavePhotoBmp = new Bitmap(Resources.GetBytes(Resources.BinaryResources.labelSavePhotoImg), Bitmap.BitmapImageType.Bmp);
@@ -739,6 +855,27 @@ namespace ProgettoAlbertengo
             cancelSaveImg = new Image(cancelSaveBmp);
             confirmSaveImgPressed = new Image(confirmSaveBmpPressed);
             cancelSaveImgPressed = new Image(cancelSaveBmpPressed);
+        }
+
+        private void MakeTrasparentImg1()
+        {
+            Bitmap labelConfirmBmp = new Bitmap(Resources.GetBytes(Resources.BinaryResources.labelConfirmImg), Bitmap.BitmapImageType.Bmp);
+            Bitmap confirmSaveBmp1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.confirmSaveImg), Bitmap.BitmapImageType.Bmp);
+            Bitmap cancelSaveBmp1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.cancelSaveImg), Bitmap.BitmapImageType.Bmp);
+            Bitmap confirmSaveBmpPressed1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.confirmSaveImgPressed), Bitmap.BitmapImageType.Bmp);
+            Bitmap cancelSaveBmpPressed1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.cancelSaveImgPressed), Bitmap.BitmapImageType.Bmp);
+
+            labelConfirmBmp.MakeTransparent(labelConfirmBmp.GetPixel(1, 1));
+            confirmSaveBmp1.MakeTransparent(confirmSaveBmp1.GetPixel(1, 1));
+            cancelSaveBmp1.MakeTransparent(cancelSaveBmp1.GetPixel(1, 1));
+            confirmSaveBmpPressed1.MakeTransparent(confirmSaveBmpPressed1.GetPixel(1, 1));
+            cancelSaveBmpPressed1.MakeTransparent(cancelSaveBmpPressed1.GetPixel(1, 1));
+
+            labelConfirmImg = new Image(labelConfirmBmp);
+            confirmSaveImg1 = new Image(confirmSaveBmp1);
+            cancelSaveImg1 = new Image(cancelSaveBmp1);
+            confirmSaveImgPressed1 = new Image(confirmSaveBmpPressed1);
+            cancelSaveImgPressed1 = new Image(cancelSaveBmpPressed1);
         }
 
         private void SetupInitWindow()
@@ -818,6 +955,20 @@ namespace ProgettoAlbertengo
         {
             mainWindow.Child = savePhotoPanel;
             mainWindow.Background = new ImageBrush(currentBitmapData);
+            mainWindow.Invalidate();
+        }
+
+        private void HideConfirmWindowButtons()
+        {
+            mainWindow.Child = new StackPanel();
+            mainWindow.Background = new SolidColorBrush(Color.Black);
+            mainWindow.Invalidate();
+        }
+
+        private void ShowConfirmWindowButtons()
+        {
+            mainWindow.Child = confirmWidowPanel;
+            mainWindow.Background = new ImageBrush(skull);
             mainWindow.Invalidate();
         }
 
