@@ -106,7 +106,7 @@ namespace Server
                 // Add credentials
                 client.Credentials = new NetworkCredential("progettoalbertengo", "FEZ6group");
                 client.EnableSsl = true;
-
+                client.Timeout = Int32.MaxValue;
                 // send message
                 client.Send(message);
 

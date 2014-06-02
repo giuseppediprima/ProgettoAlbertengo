@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,14 +29,21 @@ namespace Server
         private ImageList listaFirstFrame;
         int width = 320;
         int height = 240;
+        int attachedCounter = 0;
+        long totalAttachmentSize = 0;
+        bool sizeExceeded = false;
+        ArrayList attachments = new ArrayList();
+        bool areImages = true;
 
         public Form1()
         {
             InitializeComponent();
+            
             pictureBox1.Image = pictureBox1.InitialImage;
             listaFirstFrame = new ImageList();
-            
 
+            button5_Click(null, null);
+            
             new Thread(new ThreadStart(StartRecordingServer)).Start();
 
             new Thread(new ThreadStart(StartUpdateServer)).Start();
@@ -346,7 +355,7 @@ namespace Server
             return "./Video/" + fileName;
         }
 
-        public Image byteArrayToImage(byte[] byteArrayIn)
+        public static Image byteArrayToImage(byte[] byteArrayIn)
         {
             MemoryStream ms = new MemoryStream(byteArrayIn, 0, byteArrayIn.Length);
             ms.Write(byteArrayIn, 0, byteArrayIn.Length);
@@ -374,9 +383,21 @@ namespace Server
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            txtSendTo.Text = "";
-            txtMessage.Text = "";
-            txtSubjectLine.Text = "";
+            if (sender.GetType() != typeof(bool) || (bool)sender)
+            {
+                txtSendTo.Text = "";
+                txtMessage.Text = "";
+                txtSubjectLine.Text = "";
+            }
+
+            foreach (Control c in flowLayoutPanel1.Controls)
+                foreach (Control x in c.Controls)
+                    if (x.GetType() == typeof(CheckBox))
+                        ((CheckBox)x).Checked = false;
+            label1.Text = "No Selected Attachments";
+            attachedCounter = 0;
+            totalAttachmentSize = 0;
+            attachments.Clear();
         }
 
         private void btnSend_Click(object sender, EventArgs e)
@@ -405,83 +426,189 @@ namespace Server
                 return;
             }
 
-            
-            /*
-            string[] arr = txtAttachments.Text.Split(';');
-            alAttachments = new ArrayList();
-            for (int i = 0; i < arr.Length; i++)
+            hideSendButton();
+
+            if (attachments.Count != 0)
             {
-                if (!String.IsNullOrEmpty(arr[i].ToString().Trim()))
+                string zipFile = createZipFile();
+                if (zipFile == null)
                 {
-                    alAttachments.Add(arr[i].ToString().Trim());
+                    MessageBox.Show("Error creating attachments zip file");
+                    showSendButton();
+                    return;
                 }
+                attachments.Clear();
+                attachments.Add(zipFile);
             }
 
-            this.Hide();
-            string result;
-            if (alAttachments.Count > 0)
-                result = Emailer.SendMessageWithAttachment(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text, alAttachments);
-            else
-                result = Emailer.SendMessage(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text);
-            MessageBox.Show(result, "Email Transmittal");*/
-
-            MessageBox.Show("Email Sent");
-             
-        
+            new Thread(new ThreadStart(() =>
+            {
+                try
+                {
+                    string result;
+                    if (attachments.Count > 0)
+                        result = Emailer.SendMessageWithAttachment(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text, attachments);
+                    else
+                        result = Emailer.SendMessage(txtSendTo.Text, txtSendFrom.Text, txtSubjectLine.Text, txtMessage.Text);
+                    this.Invoke((MethodInvoker)delegate() { MessageBox.Show(result, "Email Transmittal"); });
+                    File.Delete((string)attachments[0]);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+                finally
+                {
+                    this.Invoke((MethodInvoker)delegate()
+                    {
+                        showSendButton();
+                    });
+                }
+            })).Start();
         }
 
-        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        private void showSendButton()
         {
+            pb.Hide();
+            btnSend.Show();
+        }
 
+        private void hideSendButton()
+        {
+            btnSend.Hide();
+            pb.Show();
+        }
+
+        private string createZipFile()
+        {
+            string zipPath = @"./attachments.zip";
+            try
+            {
+                ImagesTableAdapter ita = new ImagesTableAdapter();
+                if (!Directory.Exists("./Zip/"))
+                {
+                    Directory.CreateDirectory("./Zip/");
+                }
+                foreach(String s in attachments)
+                    if (s.StartsWith("Image:"))
+                    {
+                        Server.MyImageDataSet.ImagesDataTable idt = ita.GetImageById(long.Parse(s.Replace("Image: ", "")));
+                        new Bitmap(byteArrayToImage((byte[])idt.Rows[0].ItemArray[1])).Save("./Zip/" + s.Replace(":", "_") + ".bmp", ImageFormat.Bmp);
+                    }
+                    else
+                    {
+                        File.Copy(s, s.Replace("./Video", "./Zip"));
+                    }
+                if (File.Exists(zipPath))
+                    File.Delete(zipPath);
+                ZipFile.CreateFromDirectory("./Zip", zipPath);
+                Directory.Delete("./Zip", true);
+                return zipPath;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
+            areImages = false;
             //bottone Video Gallery carica i video nella listview1
-            listView1.Items.Clear();
-            listaFirstFrame.Images.Clear();
+            flowLayoutPanel1.Controls.Clear();
+            
             String[] ImageFiles = Directory.GetFiles("./Video/");
             foreach (var file in ImageFiles)
             {
                 //Add images to Imagelist
-                if(file.EndsWith("bmp"))
-                   listaFirstFrame.Images.Add(Image.FromFile(file));
+                if (file.EndsWith("bmp"))
+                {
+                    PanelItem panel = new PanelItem(file.Replace("./Video/", "Video: "), Image.FromFile(file));
+                    flowLayoutPanel1.Controls.Add(panel);
+                    if (attachments.Contains(file.Replace("bmp", "avi")))
+                        panel.checkBox1.Checked = true;
+                    panel.checkBox1.CheckedChanged += checkBox1_CheckedChanged;
+                }
             }
-            listView1.View = View.LargeIcon;
-            listaFirstFrame.ImageSize = new Size(160, 120);
-            listView1.LargeImageList = listaFirstFrame;
-            
-            for (int j = 0; j < listaFirstFrame.Images.Count; j++)
-            {
-                ListViewItem item = new ListViewItem();
-                item.ImageIndex = j;
-                this.listView1.Items.Add(item);
-            }
-
-
         }
 
-
-        /*
-        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
-            // Determine which link was clicked within the LinkLabel. 
-            this.linkLabel1.Links[linkLabel1.Links.IndexOf(e.Link)].Visited = true;
-
-            // Display the appropriate link based on the value of the  
-            // LinkData property of the Link object. 
-            string target = e.Link.LinkData as string;
-
-            if (target != null && target.Equals("video"))
-                System.Diagnostics.Process.Start("prova.avi");
-            else if (target != null && target.Equals("email"))
+            CheckBox check = (CheckBox)sender;
+            string fileName;
+            long fileSize;
+            if (!areImages)
             {
-                Thread t = new Thread(new ThreadStart(() => { 
-                    Application.Run(new frmTestEmail("progettoalbertengo@gmail.com", "Prova Video Send", "Watch my Video!!!!", Path.GetDirectoryName(Application.ExecutablePath)+"\\prova.avi")); 
-                }));
-                t.SetApartmentState(ApartmentState.STA);
-                t.Start();
+                fileName = ((string)check.Tag).Replace("Video: ", "./Video/").Replace("bmp", "avi");
+                fileSize = getItemSize(fileName);
             }
-        }*/
+            else
+            {
+                fileName = (string)check.Tag;
+                fileSize = 230454;
+            }
+            if (check.Checked)
+            {
+                if ((fileSize + totalAttachmentSize) >= 24 * 1000 * 1000)
+                {
+                    MessageBox.Show("Attacment Size exceeded");
+                    sizeExceeded = true;
+                    check.Checked = false;
+                    return;
+                }
+                attachedCounter++;
+                totalAttachmentSize += fileSize;
+                attachments.Add(fileName);
+
+                label1.Text = "Attachments: " + attachedCounter + " - Total Size: " + getConvertedTotalAttachmentSize();
+            }
+            else if (!sizeExceeded)
+            {
+                totalAttachmentSize -= fileSize;
+                if (--attachedCounter == 0)
+                    label1.Text = "No Selected Attachments";
+                else
+                    label1.Text = "Attachments: " + attachedCounter + " - Total Size: " + getConvertedTotalAttachmentSize();
+                attachments.Remove(fileName);
+            }
+            else
+                sizeExceeded = false;
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            areImages = true;
+            flowLayoutPanel1.Controls.Clear();
+            
+            ImagesTableAdapter ita = new ImagesTableAdapter();
+            Server.MyImageDataSet.ImagesDataTable idt = ita.GetData();
+
+            foreach (System.Data.DataRow image in idt.Rows)
+            {
+                string tag = "Image: " + image.ItemArray[0];
+                PanelItem panel = new PanelItem(tag, byteArrayToImage((byte[])image.ItemArray[1]));
+                flowLayoutPanel1.Controls.Add(panel);
+                if (attachments.Contains(tag))
+                    panel.checkBox1.Checked = true;
+                panel.checkBox1.CheckedChanged += checkBox1_CheckedChanged;
+            }
+        }
+
+        private string getConvertedTotalAttachmentSize()
+        {
+            if (totalAttachmentSize > 1024)
+                if (totalAttachmentSize > 1024 * 1024)
+                    return Math.Round(((float)totalAttachmentSize / (1024f * 1024f)), 2) + "MB";
+                else
+                    return Math.Round(((float)totalAttachmentSize / 1024f), 2) + "KB";
+            else
+                return totalAttachmentSize + "Bytes";
+        }
+
+        private long getItemSize(string fileName)
+        {
+            FileInfo info = new FileInfo(fileName);
+            return info.Length;
+        }
     }
 }

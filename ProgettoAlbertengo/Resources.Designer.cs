@@ -46,6 +46,7 @@ namespace ProgettoAlbertengo
             photoImgPressed = -13447,
             labelSavePhotoImg = -12533,
             cancelSaveImg = -8219,
+            error = -5941,
             empty_trash = 1624,
             SD_card1 = 18920,
             full_trash = 23019,

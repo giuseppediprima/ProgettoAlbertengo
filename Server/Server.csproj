@@ -57,6 +57,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -74,24 +76,21 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmTestEmail.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="frmTestEmail.designer.cs">
-      <DependentUpon>frmTestEmail.cs</DependentUpon>
-    </Compile>
     <Compile Include="MyImageDataSet.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>MyImageDataSet.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="PanelItem.cs">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="frmTestEmail.resx">
-      <DependentUpon>frmTestEmail.cs</DependentUpon>
+    <EmbeddedResource Include="PanelItem.resx">
+      <DependentUpon>PanelItem.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

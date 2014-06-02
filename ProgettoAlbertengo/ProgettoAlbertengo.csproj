@@ -198,4 +198,7 @@
   <ItemGroup>
     <None Include="Resources\pcImg.bmp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\error.bmp" />
+  </ItemGroup>
 </Project>
