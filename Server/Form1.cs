@@ -24,7 +24,7 @@ namespace Server
 {
     public partial class Form1 : Form
     {
-        
+        #region GLOBAL variables
         private List<Image> images;
         private ImageList listaFirstFrame;
         int width = 320;
@@ -34,6 +34,7 @@ namespace Server
         bool sizeExceeded = false;
         ArrayList attachments = new ArrayList();
         bool areImages = true;
+        #endregion
 
         public Form1()
         {
@@ -49,6 +50,7 @@ namespace Server
             new Thread(new ThreadStart(StartUpdateServer)).Start();
         }
 
+        #region NETWORK functions
         private void StartUpdateServer()
         {
             Int32 port = 14000;
@@ -120,8 +122,8 @@ namespace Server
 
             // Get a stream object for reading and writing
             stream = client.GetStream();
-            stream.WriteTimeout = 15000;
-            stream.ReadTimeout = 15000;
+            stream.WriteTimeout = 2000;
+            stream.ReadTimeout = 2000;
 
             if (streaming)
                 StreamingVideo(stream);
@@ -258,7 +260,7 @@ namespace Server
         {
             images = new List<Image>();
             // Buffer for reading data
-            Byte[] bytes = new Byte[230454];
+            byte[] bytes = new byte[230454];
             Image data = null;
             NetworkStream stream = (NetworkStream)obj;
 
@@ -280,6 +282,7 @@ namespace Server
                             pictureBox1.Image = (Image)data.Clone();
                         });
                         images.Add(data);
+                        bytes = new byte[230454];
                     }
                 }
             }
@@ -297,7 +300,7 @@ namespace Server
                 try
                 {
                     Image tmpImage = (Image)images[0].Clone();
-                    String path=GetNextFileName();
+                    String path = GetNextFileName();
                     AviWriter writer = new AviWriter(path);
                     writer.FramesPerSecond = 1;
                     IVideoEncoder encoder = new RgbVideoEncoder(width, height);
@@ -339,7 +342,9 @@ namespace Server
                 });
             }
         }
+        #endregion
 
+        #region UTILITY functions
         private string GetNextFileName()
         {
             String fileName = DateTime.Now.ToString(@"dd-MM-yyyy_HH.mm.ss")+".avi";
@@ -385,6 +390,69 @@ namespace Server
             }
         }
 
+        private void showSendButton()
+        {
+            pb.Hide();
+            btnSend.Show();
+        }
+
+        private void hideSendButton()
+        {
+            btnSend.Hide();
+            pb.Show();
+        }
+
+        private string createZipFile()
+        {
+            string zipPath = @"./attachments.zip";
+            try
+            {
+                ImagesTableAdapter ita = new ImagesTableAdapter();
+                if (!Directory.Exists("./Zip/"))
+                {
+                    Directory.CreateDirectory("./Zip/");
+                }
+                foreach (String s in attachments)
+                    if (s.StartsWith("Image:"))
+                    {
+                        Server.MyImageDataSet.ImagesDataTable idt = ita.GetImageById(long.Parse(s.Replace("Image: ", "")));
+                        new Bitmap(byteArrayToImage((byte[])idt.Rows[0].ItemArray[1])).Save("./Zip/" + s.Replace(":", "_") + ".bmp", ImageFormat.Bmp);
+                    }
+                    else
+                    {
+                        File.Copy(s, s.Replace("./Video", "./Zip"));
+                    }
+                if (File.Exists(zipPath))
+                    File.Delete(zipPath);
+                ZipFile.CreateFromDirectory("./Zip", zipPath);
+                Directory.Delete("./Zip", true);
+                return zipPath;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        private string getConvertedTotalAttachmentSize()
+        {
+            if (totalAttachmentSize > 1024)
+                if (totalAttachmentSize > 1024 * 1024)
+                    return Math.Round(((float)totalAttachmentSize / (1024f * 1024f)), 2) + "MB";
+                else
+                    return Math.Round(((float)totalAttachmentSize / 1024f), 2) + "KB";
+            else
+                return totalAttachmentSize + "Bytes";
+        }
+
+        private long getItemSize(string fileName)
+        {
+            FileInfo info = new FileInfo(fileName);
+            return info.Length;
+        }
+        #endregion
+
+        #region EVENT handlers
         private void btnCancel_Click(object sender, EventArgs e)
         {
             if (sender.GetType() != typeof(bool) || (bool)sender)
@@ -471,50 +539,6 @@ namespace Server
                     });
                 }
             })).Start();
-        }
-
-        private void showSendButton()
-        {
-            pb.Hide();
-            btnSend.Show();
-        }
-
-        private void hideSendButton()
-        {
-            btnSend.Hide();
-            pb.Show();
-        }
-
-        private string createZipFile()
-        {
-            string zipPath = @"./attachments.zip";
-            try
-            {
-                ImagesTableAdapter ita = new ImagesTableAdapter();
-                if (!Directory.Exists("./Zip/"))
-                {
-                    Directory.CreateDirectory("./Zip/");
-                }
-                foreach(String s in attachments)
-                    if (s.StartsWith("Image:"))
-                    {
-                        Server.MyImageDataSet.ImagesDataTable idt = ita.GetImageById(long.Parse(s.Replace("Image: ", "")));
-                        new Bitmap(byteArrayToImage((byte[])idt.Rows[0].ItemArray[1])).Save("./Zip/" + s.Replace(":", "_") + ".bmp", ImageFormat.Bmp);
-                    }
-                    else
-                    {
-                        File.Copy(s, s.Replace("./Video", "./Zip"));
-                    }
-                if (File.Exists(zipPath))
-                    File.Delete(zipPath);
-                ZipFile.CreateFromDirectory("./Zip", zipPath);
-                Directory.Delete("./Zip", true);
-                return zipPath;
-            }
-            catch (Exception e)
-            {
-                return null;
-            }
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -654,22 +678,6 @@ namespace Server
             if (flowLayoutPanel1.Controls.Count == 0)
                 flowLayoutPanel1.BackgroundImage = (Image)(resources.GetObject("flowLayoutPanel1.BackgroundImage"));
         }
-
-        private string getConvertedTotalAttachmentSize()
-        {
-            if (totalAttachmentSize > 1024)
-                if (totalAttachmentSize > 1024 * 1024)
-                    return Math.Round(((float)totalAttachmentSize / (1024f * 1024f)), 2) + "MB";
-                else
-                    return Math.Round(((float)totalAttachmentSize / 1024f), 2) + "KB";
-            else
-                return totalAttachmentSize + "Bytes";
-        }
-
-        private long getItemSize(string fileName)
-        {
-            FileInfo info = new FileInfo(fileName);
-            return info.Length;
-        }
+        #endregion
     }
 }

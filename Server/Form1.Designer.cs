@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.label2 = new System.Windows.Forms.Label();
             this.button5 = new System.Windows.Forms.Button();
@@ -93,7 +93,7 @@
             this.button5.BackColor = System.Drawing.Color.DarkKhaki;
             this.button5.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button5.ForeColor = System.Drawing.Color.Black;
-            this.button5.Location = new System.Drawing.Point(526, 9);
+            this.button5.Location = new System.Drawing.Point(531, 9);
             this.button5.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(502, 67);
@@ -281,10 +281,10 @@
             this.button1.AutoSize = true;
             this.button1.BackColor = System.Drawing.Color.NavajoWhite;
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(1030, 9);
+            this.button1.Location = new System.Drawing.Point(1036, 9);
             this.button1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(476, 67);
+            this.button1.Size = new System.Drawing.Size(490, 67);
             this.button1.TabIndex = 3;
             this.button1.Text = "Video Gallery";
             this.button1.UseVisualStyleBackColor = false;
@@ -303,7 +303,7 @@
             this.flowLayoutPanel1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(526, 84);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(980, 729);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(1000, 740);
             this.flowLayoutPanel1.TabIndex = 4;
             // 
             // Form1
@@ -315,7 +315,7 @@
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackColor = System.Drawing.SystemColors.ActiveCaption;
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
-            this.ClientSize = new System.Drawing.Size(1518, 825);
+            this.ClientSize = new System.Drawing.Size(1538, 825);
             this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.pictureBox1);
@@ -324,9 +324,9 @@
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(1540, 880);
+            this.MaximumSize = new System.Drawing.Size(1560, 880);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(1540, 880);
+            this.MinimumSize = new System.Drawing.Size(1560, 880);
             this.Name = "Form1";
             this.Text = "MainForm";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

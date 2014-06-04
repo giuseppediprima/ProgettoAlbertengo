@@ -187,4 +187,10 @@
   <data name="teschio" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\teschio.bmp;System.Byte[], mscorlib, Version=4.2.0.0, Culture=neutral, PublicKeyToken=null</value>
   </data>
+  <data name="counting" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\counting.tinyfnt;System.Byte[], mscorlib, Version=4.2.0.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+  <data name="myText" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\myText.tinyfnt;System.Byte[], mscorlib, Version=4.2.0.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
 </root>

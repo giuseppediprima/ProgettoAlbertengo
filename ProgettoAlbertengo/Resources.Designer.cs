@@ -61,6 +61,8 @@ namespace ProgettoAlbertengo
         [System.SerializableAttribute()]
         internal enum FontResources : short
         {
+            myText = -14983,
+            counting = -9670,
             small = 13070,
             NinaB = 18060,
         }

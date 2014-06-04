@@ -23,8 +23,8 @@ namespace ProgettoAlbertengo
 {
     public partial class Program
     {
+        #region GLOBAL variables
         private PacmanGame _pacmanGame = null;
-
         //Stato d'avanzamento del programma
         static int stato = 0;
         Window mainWindow;
@@ -58,18 +58,6 @@ namespace ProgettoAlbertengo
         Image confirmSaveImgPressed;
         Image cancelSaveImgPressed;
 
-        StackPanel confirmWidowPanel;
-        StackPanel labelConfirmMessage;
-        StackPanel buttonSavePanel1;
-        StackPanel confirmSave1;
-        StackPanel cancelSave1;
-
-        Image labelConfirmImg;
-        Image confirmSaveImg1;
-        Image cancelSaveImg1;
-        Image confirmSaveImgPressed1;
-        Image cancelSaveImgPressed1;
-
         StackPanel trashPanel;
         Image emptyTrash;
         Image fullTrash;
@@ -85,6 +73,7 @@ namespace ProgettoAlbertengo
         string[] immaginiGalleria;
         int numeroImmagini, indice;
         long start = 0, end = 0;
+        #endregion
 
         // This method is run when the mainboard is powered up or reset.   
         void ProgramStarted()
@@ -94,7 +83,7 @@ namespace ProgettoAlbertengo
 
             wifi.NetworkDown += new GTM.Module.NetworkModule.NetworkEventHandler(wifi_NetworkDown);
             wifi.NetworkUp += new GTM.Module.NetworkModule.NetworkEventHandler(wifi_NetworkUp);
-            
+
             ethernet.NetworkDown += new GTM.Module.NetworkModule.NetworkEventHandler(ethernet_NetworkDown);
             ethernet.NetworkUp += new GTM.Module.NetworkModule.NetworkEventHandler(ethernet_NetworkUp);
             sdCard.SDCardUnmounted += new SDCard.SDCardUnmountedEventHandler(sdCard_Unmounted);
@@ -109,20 +98,36 @@ namespace ProgettoAlbertengo
 
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Debug.Print("Program Started");
-            
         }
-        
-        // // // // // // // START EVENT HANDLERS // // // // // // // // //
 
-        void joystick_JoystickPressed(Joystick sender, Joystick.JoystickState state)
+        #region EVENT HANDLERS
+        private void joystick_JoystickPressed(Joystick sender, Joystick.JoystickState state)
         {
             if (stato == 0)
             {
+                mainWindow.Child = new StackPanel();
+                Bitmap back = new Bitmap(320, 240);
+                back.DrawImage(0, 0, skull, 0, 0, 320, 240);
+
+                Font font = Resources.GetFont(Resources.FontResources.counting);
+                for (int j = 0; j <= 160; j++)
+                {
+                    Color color = chooseColor(j);
+                    back.DrawEllipse(color, 1, 160, 120, j, j, color, 0, 0, color, 0, 0, 0);
+                    display.SimpleGraphics.DisplayImage(back, 0, 0);
+                    display.SimpleGraphics.DisplayText("" + (9-j/18), font, GT.Color.Black, (uint)(160-font.MaxWidth/2), (uint)(119-font.Height/2)); 
+                    Thread.Sleep(100);
+                }
+
                 stato = 6;
-                ShowConfirmWindowButtons();
+                var surface = (Bitmap)(display.SimpleGraphics.GetType().GetField("_display", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(display.SimpleGraphics));
+
+                _pacmanGame = new PacmanGame(surface);
+                _pacmanGame.InputManager.AddInputProvider(new GhiJoystickInputProvider(joystick));
+                _pacmanGame.Initialize();
             }
         }
-        
+
         private void ethernet_NetworkUp(GTM.Module.NetworkModule sender, GTM.Module.NetworkModule.NetworkState state)
         {
             Debug.Print("Ethernet Network UP");
@@ -138,7 +143,7 @@ namespace ProgettoAlbertengo
                 mainWindow.Background = new SolidColorBrush(Color.Black);
                 stato = 0;
                 ShowInitButtons();
-                Thread t = new Thread(new ThreadStart(() => { if (s != null) s.Close(); }));
+                Thread t = new Thread(new ThreadStart(() => { lock (s) { if (s != null) s.Close(); } }));
                 t.Priority = ThreadPriority.BelowNormal;
                 t.Start();
             }
@@ -180,7 +185,8 @@ namespace ProgettoAlbertengo
 
         private void sdCard_Unmounted(SDCard sender)
         {
-            if (!sdCard.IsCardInserted || !sdCard.IsCardMounted){
+            if (!sdCard.IsCardInserted || !sdCard.IsCardMounted)
+            {
                 ledSd.TurnRed();
 
                 if (stato == 1)
@@ -207,7 +213,7 @@ namespace ProgettoAlbertengo
         {
             if (start == 0)
                 start = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            else if(end == 0)
+            else if (end == 0)
             {
                 end = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                 Debug.Print("Streaming Bitmap time: " + (end - start));
@@ -218,11 +224,14 @@ namespace ProgettoAlbertengo
             if (stato == 1)
                 display.SimpleGraphics.DisplayImage(bitmap, 0, 0);
             if (stato == 4)
-            {
-                Thread t = new Thread(new ThreadStart(sendImage));
-                t.Priority = ThreadPriority.BelowNormal;
-                t.Start();
-            }
+                if(ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+                {
+                    Thread t = new Thread(new ThreadStart(sendImage));
+                    t.Priority = ThreadPriority.BelowNormal;
+                    t.Start();
+                }
+                else
+                    backButton_Pressed(null, Button.ButtonState.Pressed);
         }
 
         private void backButton_Pressed(Button sender, Button.ButtonState state)
@@ -255,31 +264,44 @@ namespace ProgettoAlbertengo
 
                 case 4:
                     //VideoStreaming state
-                    ledNet.TurnGreen();
+                    if (ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+                        ledNet.TurnGreen();
+                    else
+                        ledNet.TurnRed();
                     camera.StopStreamingBitmaps();
                     mainWindow.Background = new SolidColorBrush(Color.Black);
                     stato = 0;
                     ShowInitButtons();
-                    Thread t = new Thread(new ThreadStart(() => {
-                        try
+                    Thread t = new Thread(new ThreadStart(() =>
+                    {
+                        if (s == null)
+                            return;
+                        lock (s)
                         {
-                            if (s != null) s.Close();
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.Print(e.StackTrace);
+                            try
+                            {
+                                s.Close();
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.Print(e.StackTrace);
+                            }
+                            finally
+                            {
+                                s = null;
+                            }
                         }
                     }));
                     t.Priority = ThreadPriority.BelowNormal;
                     t.Start();
                     break;
                 case 6:
-                    HideConfirmWindowButtons();
+                    //this.Reboot();
                     stato = 0;
+                    new Thread(new ThreadStart(() => { _pacmanGame._gameTimer.Dispose(); })).Start();
+                    Thread.Sleep(500);
                     mainWindow.Background = new SolidColorBrush(Color.Black);
                     ShowInitButtons();
-                    break;
-                case 7:
                     break;
                 default:
                     mainWindow.Background = new SolidColorBrush(Color.Black);
@@ -306,9 +328,6 @@ namespace ProgettoAlbertengo
                     t.Start();
                     ShowInitButtons();
                     stato = 0;
-                    break;
-                case 6:
-                    confirmSave1_TouchUp(null, null);
                     break;
             }
         }
@@ -363,15 +382,24 @@ namespace ProgettoAlbertengo
             pc.Children.Clear();
             pc.Children.Add(pcImg);
             mainWindow.Invalidate();
-            stato = 5;
-            HideInitButtons();
-                
-            if (VerifySDCard())
+
+            bool sdStatus = true;
+            if ((sdStatus = VerifySDCard()) == true && ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
             {
+                stato = 5;
+                HideInitButtons();
                 startUpload();
             }
-            else
+            else if (!sdStatus)
+            {
+                HideInitButtons();
                 mainWindow.Background = new ImageBrush(sdBmpImage);
+            }
+            else
+            {
+                SetupNet();
+                ledNet.TurnRed();
+            }
         }
 
         private void videoStreaming_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
@@ -389,10 +417,18 @@ namespace ProgettoAlbertengo
             videoStreaming.Children.Add(videoImg);
             mainWindow.Invalidate();
 
-            HideInitButtons();
-            stato = 4;
-            ledNet.BlinkRepeatedly(GT.Color.Orange);
-            startVideoStreaming();
+            if (ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+            {
+                HideInitButtons();
+                stato = 4;
+                ledNet.BlinkRepeatedly(GT.Color.Orange);
+                startVideoStreaming();
+            }
+            else
+            {
+                SetupNet();
+                ledNet.TurnRed();
+            }
         }
 
         private void takePhoto_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
@@ -460,45 +496,6 @@ namespace ProgettoAlbertengo
             mainWindow.Invalidate();
         }
 
-        private void cancelSave1_TouchUp(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
-        {
-            cancelSave1.Children.Clear();
-            cancelSave1.Children.Add(cancelSaveImg1);
-            mainWindow.Invalidate();
-
-            HideConfirmWindowButtons();
-            stato = 0;
-            ShowInitButtons();
-        }
-
-        private void cancelSave1_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
-        {
-            cancelSave1.Children.Clear();
-            cancelSave1.Children.Add(cancelSaveImgPressed1);
-            mainWindow.Invalidate();
-        }
-
-        private void confirmSave1_TouchUp(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
-        {
-            confirmSave1.Children.Clear();
-            confirmSave1.Children.Add(confirmSaveImg1);
-            mainWindow.Invalidate();
-
-            stato = 7;
-            var surface = (Bitmap)(display.SimpleGraphics.GetType().GetField("_display", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(display.SimpleGraphics));
-
-            _pacmanGame = new PacmanGame(surface);
-            _pacmanGame.InputManager.AddInputProvider(new GhiJoystickInputProvider(joystick));
-            _pacmanGame.Initialize();
-        }
-
-        private void confirmSave1_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
-        {
-            confirmSave1.Children.Clear();
-            confirmSave1.Children.Add(confirmSaveImgPressed1);
-            mainWindow.Invalidate();
-        }
-
         private void trashPanel_TouchDown(object sender, Microsoft.SPOT.Input.TouchEventArgs e)
         {
             trashPanel.Children.Clear();
@@ -546,9 +543,9 @@ namespace ProgettoAlbertengo
                 }
             }
         }
-        // // // // // // // END EVENT HANDLERS // // // // // // // // //
+        #endregion
 
-
+        #region NETWORK functions   
         private void SetupNet()
         {
             if (!wifi.Interface.IsOpen)
@@ -556,7 +553,7 @@ namespace ProgettoAlbertengo
             //wifi.UseDHCP();
             //wifi.UseStaticIP("169.254.50.93", "255.255.0.0", "169.254.50.91");
             //wifi.UseThisNetworkInterface();
-            
+
             if (!ethernet.Interface.IsOpen)
                 ethernet.Interface.Open();
             //ethernet.UseDHCP();
@@ -564,7 +561,7 @@ namespace ProgettoAlbertengo
             ethernet.UseThisNetworkInterface();
 
             Debug.Print("Net Setup finished");
-            
+
         }
 
         private void connectStreamSocket()
@@ -573,6 +570,8 @@ namespace ProgettoAlbertengo
             try
             {
                 Debug.Print("Create new Socket..");
+                if (s != null)
+                    s.Close();
                 s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 String ipAddr = "192.168.137.1";
 
@@ -580,11 +579,12 @@ namespace ProgettoAlbertengo
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(ipAddr), 13000);
                 Debug.Print("Connect..");
                 s.Connect(remoteEP);
-               
+
                 Debug.Print("Connected!");
             }
-            catch (Exception e) {
-                Debug.Print(e.StackTrace);    
+            catch (Exception e)
+            {
+                Debug.Print(e.StackTrace);
                 s = null;
             }
         }
@@ -603,6 +603,7 @@ namespace ProgettoAlbertengo
                 Debug.Print("Connect..");
                 socket.Connect(remoteEP);
 
+                socket.SendTimeout = 2000;
                 byte[] num_images = new byte[1];
                 if (VerifySDCard())
                 {
@@ -662,9 +663,13 @@ namespace ProgettoAlbertengo
                     socket.Send(num_images);
                 }
             }
-            catch (Exception e) 
+            catch (Exception e)
             {
                 Debug.Print("Exception: " + e.StackTrace);
+                if (ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+                    ledNet.TurnGreen();
+                else
+                    ledNet.TurnRed();
             }
             finally
             {
@@ -677,15 +682,21 @@ namespace ProgettoAlbertengo
         {
             try
             {
-                if (s == null) 
+                if (s == null)
                     return;
-                Debug.Print("Send image...");
-                Byte[] outputFileBuffer = new Byte[currentBitmapData.Height * currentBitmapData.Width * 3 + 54];
-                Util.BitmapToBMPFile(currentBitmapData.GetBitmap(), currentBitmapData.Width, currentBitmapData.Height, outputFileBuffer);
-                s.Send(outputFileBuffer);
+                lock (s)
+                {
+                    s.SendTimeout = 2000;
+                    Debug.Print("Send image...");
+                    Byte[] outputFileBuffer = new Byte[currentBitmapData.Height * currentBitmapData.Width * 3 + 54];
+                    Util.BitmapToBMPFile(currentBitmapData.GetBitmap(), currentBitmapData.Width, currentBitmapData.Height, outputFileBuffer);
+                    s.Send(outputFileBuffer);
+                }
             }
-            catch (Exception e) 
-            { }
+            catch (Exception e)
+            {
+                Debug.Print("Exception " + e.Message + ":  " + e.StackTrace);
+            }
         }
 
         private void connectEthernet()
@@ -730,6 +741,64 @@ namespace ProgettoAlbertengo
              */
         }
 
+        private void startUpload()
+        {
+            mainWindow.Background = new SolidColorBrush(Color.Black);
+            display.SimpleGraphics.ClearNoRedraw();
+            string text = "Upload images: Please Wait...";
+            Font font = Resources.GetFont(Resources.FontResources.myText);
+            display.SimpleGraphics.DisplayText(text, font, GT.Color.White, 15, 90);
+            ledNet.BlinkRepeatedly(GT.Color.Orange);
+
+            Thread t = new Thread(new ThreadStart(connectUploadSocket));
+            t.Priority = ThreadPriority.BelowNormal;
+            t.Start();
+
+            uint i = 0;
+            while (t.IsAlive)
+            {
+                //TODO sostituire con qualcos'altro perchè blocca la grafica
+                if (i > 200)
+                {
+                    display.SimpleGraphics.ClearNoRedraw();
+                    display.SimpleGraphics.DisplayText(text, font, GT.Color.White, 160 - (uint)(font.AverageWidth * text.Length / 2), 90);
+                    i -= 200;
+                }
+                display.SimpleGraphics.DisplayEllipse(GT.Color.White, 60 + i, 150, 5, 5);
+                i += 15;
+
+                Thread.Sleep(100);
+            }
+
+            if (ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+                ledNet.TurnGreen();
+            else
+                ledNet.TurnRed();
+            mainWindow.Background = new SolidColorBrush(Color.Black);
+            stato = 0;
+            ShowInitButtons();
+        }
+
+        private void startVideoStreaming()
+        {
+            Bitmap tmp = new Bitmap(320, 240);
+            Font font = Resources.GetFont(Resources.FontResources.myText);
+            string text = "Press Back Button to end";
+            tmp.DrawText(text, font, GT.Color.Red, 30, 100);
+            mainWindow.Background = new ImageBrush(tmp);
+
+            Thread t = new Thread(new ThreadStart(connectStreamSocket));
+            t.Priority = ThreadPriority.Normal;
+            t.Start();
+            while (t.IsAlive)
+                Thread.Sleep(200);
+
+            camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
+
+        }
+        #endregion
+
+        #region DISPLAY Setups
         private void SetupDisplay()
         {
             mainWindow = display.WPFWindow;
@@ -737,8 +806,7 @@ namespace ProgettoAlbertengo
             SetupInitWindow();
             SetupTrashPanel();
             SetupSavePhotoWindow();
-            SetupConfirmWindow();
-
+            
             ShowInitButtons();
 
             mainWindow.TouchDown += mainWindow_TouchDown;
@@ -799,43 +867,6 @@ namespace ProgettoAlbertengo
             cancelSave.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(cancelSave_TouchUp);
         }
 
-        private void SetupConfirmWindow()
-        {
-            MakeTrasparentImg1();
-
-            confirmWidowPanel = new StackPanel(Orientation.Vertical);
-            labelConfirmMessage = new StackPanel(Orientation.Horizontal);
-            buttonSavePanel1 = new StackPanel(Orientation.Horizontal);
-            confirmSave1 = new StackPanel(Orientation.Horizontal);
-            cancelSave1 = new StackPanel(Orientation.Horizontal);
-
-            confirmWidowPanel.SetMargin(6);
-            labelConfirmMessage.SetMargin(6);
-            buttonSavePanel1.SetMargin(6);
-            confirmSave1.SetMargin(6);
-            cancelSave1.SetMargin(6);
-
-            labelConfirmMessage.HorizontalAlignment = HorizontalAlignment.Center;
-            buttonSavePanel1.HorizontalAlignment = HorizontalAlignment.Center;
-            confirmSave1.HorizontalAlignment = HorizontalAlignment.Center;
-            cancelSave1.HorizontalAlignment = HorizontalAlignment.Center;
-
-            labelConfirmMessage.Children.Add(labelConfirmImg);
-            confirmSave1.Children.Add(confirmSaveImg1);
-            cancelSave1.Children.Add(cancelSaveImg1);
-
-            buttonSavePanel1.Children.Add(confirmSave1);
-            buttonSavePanel1.Children.Add(cancelSave1);
-            confirmWidowPanel.Children.Add(labelConfirmMessage);
-            confirmWidowPanel.Children.Add(buttonSavePanel1);
-
-            confirmSave1.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(confirmSave1_TouchDown);
-            cancelSave1.TouchDown += new Microsoft.SPOT.Input.TouchEventHandler(cancelSave1_TouchDown);
-
-            confirmSave1.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(confirmSave1_TouchUp);
-            cancelSave1.TouchUp += new Microsoft.SPOT.Input.TouchEventHandler(cancelSave1_TouchUp);
-        }
-
         private void MakeTrasparentImg()
         {
             Bitmap labelSavePhotoBmp = new Bitmap(Resources.GetBytes(Resources.BinaryResources.labelSavePhotoImg), Bitmap.BitmapImageType.Bmp);
@@ -855,27 +886,6 @@ namespace ProgettoAlbertengo
             cancelSaveImg = new Image(cancelSaveBmp);
             confirmSaveImgPressed = new Image(confirmSaveBmpPressed);
             cancelSaveImgPressed = new Image(cancelSaveBmpPressed);
-        }
-
-        private void MakeTrasparentImg1()
-        {
-            Bitmap labelConfirmBmp = new Bitmap(Resources.GetBytes(Resources.BinaryResources.labelConfirmImg), Bitmap.BitmapImageType.Bmp);
-            Bitmap confirmSaveBmp1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.confirmSaveImg), Bitmap.BitmapImageType.Bmp);
-            Bitmap cancelSaveBmp1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.cancelSaveImg), Bitmap.BitmapImageType.Bmp);
-            Bitmap confirmSaveBmpPressed1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.confirmSaveImgPressed), Bitmap.BitmapImageType.Bmp);
-            Bitmap cancelSaveBmpPressed1 = new Bitmap(Resources.GetBytes(Resources.BinaryResources.cancelSaveImgPressed), Bitmap.BitmapImageType.Bmp);
-
-            labelConfirmBmp.MakeTransparent(labelConfirmBmp.GetPixel(1, 1));
-            confirmSaveBmp1.MakeTransparent(confirmSaveBmp1.GetPixel(1, 1));
-            cancelSaveBmp1.MakeTransparent(cancelSaveBmp1.GetPixel(1, 1));
-            confirmSaveBmpPressed1.MakeTransparent(confirmSaveBmpPressed1.GetPixel(1, 1));
-            cancelSaveBmpPressed1.MakeTransparent(cancelSaveBmpPressed1.GetPixel(1, 1));
-
-            labelConfirmImg = new Image(labelConfirmBmp);
-            confirmSaveImg1 = new Image(confirmSaveBmp1);
-            cancelSaveImg1 = new Image(cancelSaveBmp1);
-            confirmSaveImgPressed1 = new Image(confirmSaveBmpPressed1);
-            cancelSaveImgPressed1 = new Image(cancelSaveBmpPressed1);
         }
 
         private void SetupInitWindow()
@@ -957,86 +967,28 @@ namespace ProgettoAlbertengo
             mainWindow.Background = new ImageBrush(currentBitmapData);
             mainWindow.Invalidate();
         }
+        #endregion
 
-        private void HideConfirmWindowButtons()
-        {
-            mainWindow.Child = new StackPanel();
-            mainWindow.Background = new SolidColorBrush(Color.Black);
-            mainWindow.Invalidate();
-        }
-
-        private void ShowConfirmWindowButtons()
-        {
-            mainWindow.Child = confirmWidowPanel;
-            mainWindow.Background = new ImageBrush(skull);
-            mainWindow.Invalidate();
-        }
-
-        private void startVideoStreaming()
-        {
-            Bitmap tmp = new Bitmap(320, 240);
-            tmp.DrawText("Press Back Button to end", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.Red, 50, 100);
-            mainWindow.Background = new ImageBrush(tmp);
-            
-            Thread t = new Thread(new ThreadStart(connectStreamSocket));
-            t.Priority = ThreadPriority.Normal;
-            t.Start();
-            while (t.IsAlive)
-                Thread.Sleep(200);
-
-            camera.StartStreamingBitmaps(new Bitmap(camera.CurrentPictureResolution.Width, camera.CurrentPictureResolution.Height));
-            
-        }
-
-        private void startUpload()
-        {
-            mainWindow.Background = new SolidColorBrush(Color.Black);
-            display.SimpleGraphics.ClearNoRedraw();
-            display.SimpleGraphics.DisplayText("Upload images... Please Wait...", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.White, 50, 100);
-            ledNet.BlinkRepeatedly(GT.Color.Orange);
-            
-            Thread t = new Thread(new ThreadStart(connectUploadSocket));
-            t.Priority = ThreadPriority.BelowNormal;
-            t.Start();
-
-            uint i = 0;
-            while (t.IsAlive)
-            {
-                //TODO sostituire con qualcos'altro perchè blocca la grafica
-                if (i > 200)
-                {
-                    display.SimpleGraphics.ClearNoRedraw();
-                    display.SimpleGraphics.DisplayText("Upload images... Please Wait...", Resources.GetFont(Resources.FontResources.NinaB), GT.Color.White, 50, 100);
-                    i -= 200;
-                }
-                display.SimpleGraphics.DisplayEllipse(GT.Color.White, 60 + i, 150, 5, 5);
-                i += 15;
-                
-                Thread.Sleep(100);
-            }
-
-            ledNet.TurnGreen();
-            mainWindow.Background = new SolidColorBrush(Color.Black);
-            stato = 0;
-            ShowInitButtons();
-        }
-
+        #region SDCARD-IMAGE functions
         private void removeImage()
         {
             try
             {
                 ledSd.BlinkRepeatedly(GT.Color.Orange);
-                sdCard.GetStorageDevice().Delete("\\SD\\Image-" + indice + ".jpg");
-                if (numeroImmagini != 1 && indice != (numeroImmagini - 1))
+                lock (sdCard)
                 {
-                    sdCard.GetStorageDevice().WriteFile("\\SD\\Image-" + indice + ".jpg", sdCard.GetStorageDevice().ReadFile("\\SD\\Image-" + (numeroImmagini - 1) + ".jpg"));
-                    sdCard.GetStorageDevice().Delete("\\SD\\Image-" + (numeroImmagini - 1) + ".jpg");
+                    sdCard.GetStorageDevice().Delete("\\SD\\Image-" + indice + ".jpg");
+                    if (numeroImmagini != 1 && indice != (numeroImmagini - 1))
+                    {
+                        sdCard.GetStorageDevice().WriteFile("\\SD\\Image-" + indice + ".jpg", sdCard.GetStorageDevice().ReadFile("\\SD\\Image-" + (numeroImmagini - 1) + ".jpg"));
+                        sdCard.GetStorageDevice().Delete("\\SD\\Image-" + (numeroImmagini - 1) + ".jpg");
+                    }
+                    else
+                    {
+                        mainWindow.Child = new StackPanel();
+                    }
+                    sdCard.UnmountSDCard();
                 }
-                else
-                {
-                    mainWindow.Child = new StackPanel();
-                }
-                sdCard.UnmountSDCard();
             }
             catch (Exception e)
             {
@@ -1047,48 +999,50 @@ namespace ProgettoAlbertengo
 
         private void savePicture()
         {
-            if (VerifySDCard())
+            lock (sdCard)
             {
-                try
+                if (VerifySDCard())
                 {
-                    ledSd.BlinkRepeatedly(GT.Color.Blue);
-                    GT.StorageDevice storage = sdCard.GetStorageDevice();
-                    string[] dirs = storage.ListDirectories("\\");
-                    bool exist = false;
-                    foreach (string d in dirs)
+                    try
                     {
-                        if (d.Equals("SD"))
+                        ledSd.BlinkRepeatedly(GT.Color.Blue);
+                        GT.StorageDevice storage = sdCard.GetStorageDevice();
+                        string[] dirs = storage.ListDirectories("\\");
+                        bool exist = false;
+                        foreach (string d in dirs)
                         {
-                            exist = true;
-                            break;
+                            if (d.Equals("SD"))
+                            {
+                                exist = true;
+                                break;
+                            }
                         }
+                        if (!exist)
+                            storage.CreateDirectory("\\SD\\");
+                        uint imageNumber = (uint)storage.ListFiles("\\SD\\").Length;
+
+                        byte[] bytes = new byte[currentBitmapData.Width * currentBitmapData.Height * 3 + 54];
+                        Util.BitmapToBMPFile(currentBitmapData.GetBitmap(), currentBitmapData.Width, currentBitmapData.Height, bytes);
+                        GT.Picture picture = new GT.Picture(bytes, GT.Picture.PictureEncoding.JPEG);
+
+                        string pathFileName = "\\SD\\Image-" + (imageNumber++).ToString() + ".jpg";
+
+                        storage.WriteFile(pathFileName, picture.PictureData);
+                        sdCard.UnmountSDCard();
                     }
-                    if (!exist)
-                        storage.CreateDirectory("\\SD\\");
-                    uint imageNumber = (uint)storage.ListFiles("\\SD\\").Length;
-
-                    byte[] bytes = new byte[currentBitmapData.Width * currentBitmapData.Height * 3 + 54];
-                    Util.BitmapToBMPFile(currentBitmapData.GetBitmap(), currentBitmapData.Width, currentBitmapData.Height, bytes);
-                    GT.Picture picture = new GT.Picture(bytes, GT.Picture.PictureEncoding.JPEG);
-
-                    string pathFileName = "\\SD\\Image-" + (imageNumber++).ToString() + ".jpg";
-
-                    storage.WriteFile(pathFileName, picture.PictureData);
-                    sdCard.UnmountSDCard();    
-                }
-                catch (Exception ex)
-                {
-                    mainWindow.Background = new ImageBrush(errorImgBmp);
-                    Debug.Print("Message: " + ex.Message + "  Inner Exception: " + ex.InnerException);
-                }
-                finally
-                {
-                    ledSd.TurnOff();
+                    catch (Exception ex)
+                    {
+                        mainWindow.Background = new ImageBrush(errorImgBmp);
+                        Debug.Print("Message: " + ex.Message + "  Inner Exception: " + ex.InnerException);
+                    }
+                    finally
+                    {
+                        ledSd.TurnOff();
+                    }
                 }
             }
-            
         }
-        
+
         private bool VerifySDCard()
         {
             if (sdCard.IsCardInserted)
@@ -1116,54 +1070,78 @@ namespace ProgettoAlbertengo
 
         private void mostraGalleria()
         {
-            //mostra la galleria delle immagini salvate
-            if (VerifySDCard())
+            lock (sdCard)
             {
-                try
+                //mostra la galleria delle immagini salvate
+                if (VerifySDCard())
                 {
-                    GT.StorageDevice storage = sdCard.GetStorageDevice();
-                    string[] dirs = storage.ListDirectories("\\");
-                    bool exist = false;
-                    foreach (string d in dirs)
+                    try
                     {
-                        if (d.Equals("SD"))
+                        GT.StorageDevice storage = sdCard.GetStorageDevice();
+                        string[] dirs = storage.ListDirectories("\\");
+                        bool exist = false;
+                        foreach (string d in dirs)
                         {
-                            exist = true;
-                            break;
+                            if (d.Equals("SD"))
+                            {
+                                exist = true;
+                                break;
+                            }
                         }
-                    }
 
-                    if (!exist)
+                        if (!exist)
+                        {
+                            mainWindow.Background = new ImageBrush(noBmpImage);
+                            return;
+                        }
+
+                        immaginiGalleria = storage.ListFiles("\\SD\\");
+
+                        if ((numeroImmagini = (int)immaginiGalleria.Length) == 0)
+                        {
+                            mainWindow.Background = new ImageBrush(noBmpImage);
+                            Debug.Print("Nessun File in SD...");
+
+                            return;
+                        }
+
+                        indice = 0;
+                        mainWindow.Background = new ImageBrush(new GT.Picture(storage.ReadFile("\\" + immaginiGalleria[indice]), GT.Picture.PictureEncoding.BMP).MakeBitmap());
+                        mainWindow.Child = trashPanel;
+                    }
+                    catch (Exception e)
                     {
-                        mainWindow.Background = new ImageBrush(noBmpImage);
-                        return;
+                        mainWindow.Background = new ImageBrush(errorImgBmp);
+                        Debug.Print(e.StackTrace);
                     }
-
-                    immaginiGalleria = storage.ListFiles("\\SD\\");
-
-                    if ((numeroImmagini = (int)immaginiGalleria.Length) == 0)
-                    {
-                        mainWindow.Background = new ImageBrush(noBmpImage);
-                        Debug.Print("Nessun File in SD...");
-
-                        return;
-                    }
-
-                    indice = 0;
-                    mainWindow.Background = new ImageBrush(new GT.Picture(storage.ReadFile("\\" + immaginiGalleria[indice]), GT.Picture.PictureEncoding.BMP).MakeBitmap());
-                    mainWindow.Child = trashPanel;
                 }
-                catch (Exception e)
+                else
                 {
-                    mainWindow.Background = new ImageBrush(errorImgBmp);
-                    Debug.Print(e.StackTrace);
+                    mainWindow.Background = new ImageBrush(sdBmpImage);
+                    Debug.Print("Nessuna SD...");
                 }
-            }
-            else
-            {
-                mainWindow.Background = new ImageBrush(sdBmpImage);
-                Debug.Print("Nessuna SD...");
             }
         }
+        #endregion
+
+        private Color chooseColor(int j)
+        {
+            if (j < 20)
+                return Colors.Red;
+            if (j < 40)
+                return Colors.Orange;
+            if (j < 60)
+                return Colors.Yellow;
+            if (j < 80)
+                return Colors.Green;
+            if (j < 100)
+                return Colors.Blue;
+            if (j < 120)
+                return Colors.Cyan;
+            if (j < 140)
+                return Colors.Purple;
+            return Colors.Magenta;
+        }
+
     }
 }
