@@ -123,7 +123,7 @@ namespace Server
             // Get a stream object for reading and writing
             stream = client.GetStream();
             stream.WriteTimeout = 2000;
-            stream.ReadTimeout = 2000;
+            stream.ReadTimeout = 4000;
 
             if (streaming)
                 StreamingVideo(stream);

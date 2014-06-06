@@ -70,6 +70,9 @@ namespace ProgettoAlbertengo
 
         Socket s = null;
 
+        int isConnected = 0;
+        int nThreads = 0;
+
         string[] immaginiGalleria;
         int numeroImmagini, indice;
         long start = 0, end = 0;
@@ -80,9 +83,6 @@ namespace ProgettoAlbertengo
         {
             SetupDisplay();
             SetupNet();
-
-            wifi.NetworkDown += new GTM.Module.NetworkModule.NetworkEventHandler(wifi_NetworkDown);
-            wifi.NetworkUp += new GTM.Module.NetworkModule.NetworkEventHandler(wifi_NetworkUp);
 
             ethernet.NetworkDown += new GTM.Module.NetworkModule.NetworkEventHandler(ethernet_NetworkDown);
             ethernet.NetworkUp += new GTM.Module.NetworkModule.NetworkEventHandler(ethernet_NetworkUp);
@@ -143,33 +143,10 @@ namespace ProgettoAlbertengo
                 mainWindow.Background = new SolidColorBrush(Color.Black);
                 stato = 0;
                 ShowInitButtons();
-                Thread t = new Thread(new ThreadStart(() => { lock (s) { if (s != null) s.Close(); } }));
+                Thread t = new Thread(new ThreadStart(() => { if (s != null) lock (s) { s.Close(); } }));
                 t.Priority = ThreadPriority.BelowNormal;
                 t.Start();
             }
-        }
-
-        private void wifi_NetworkUp(GTM.Module.NetworkModule sender, GTM.Module.NetworkModule.NetworkState state)
-        {
-            /*
-            Debug.Print("Network UP");
-            ledNet.TurnBlue();
-
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            String ipAddr = "127.0.0.1";
-            IPEndPoint remoteEP = new IPEndPoint(Dns.GetHostEntry(ipAddr).AddressList[0], 13000);
-            s.Connect(remoteEP);
-            s.Send(System.Text.UTF8Encoding.UTF8.GetBytes("ciao minchia"));
-            s.Close();
-            ledNet.TurnOff();
-            */
-        }
-
-        private void wifi_NetworkDown(GTM.Module.NetworkModule sender, GTM.Module.NetworkModule.NetworkState state)
-        {
-            Debug.Print("Network DOWN");
-            //new Thread(new ThreadStart(connect)).Start();
-            ledNet.TurnBlue();
         }
 
         private void sdCard_Mounted(SDCard sender, GT.StorageDevice SDCard)
@@ -224,8 +201,9 @@ namespace ProgettoAlbertengo
             if (stato == 1)
                 display.SimpleGraphics.DisplayImage(bitmap, 0, 0);
             if (stato == 4)
-                if(ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+                if(ethernet.IsNetworkUp && ethernet.IsNetworkConnected && isConnected == 1)
                 {
+                    Interlocked.Increment(ref nThreads);
                     Thread t = new Thread(new ThreadStart(sendImage));
                     t.Priority = ThreadPriority.BelowNormal;
                     t.Start();
@@ -272,6 +250,8 @@ namespace ProgettoAlbertengo
                     mainWindow.Background = new SolidColorBrush(Color.Black);
                     stato = 0;
                     ShowInitButtons();
+                    if(isConnected > 0)
+                        Interlocked.Decrement(ref isConnected);
                     Thread t = new Thread(new ThreadStart(() =>
                     {
                         if (s == null)
@@ -417,7 +397,7 @@ namespace ProgettoAlbertengo
             videoStreaming.Children.Add(videoImg);
             mainWindow.Invalidate();
 
-            if (ethernet.IsNetworkUp && ethernet.IsNetworkConnected)
+            if (ethernet.IsNetworkUp && ethernet.IsNetworkConnected && nThreads == 0)
             {
                 HideInitButtons();
                 stato = 4;
@@ -548,15 +528,8 @@ namespace ProgettoAlbertengo
         #region NETWORK functions   
         private void SetupNet()
         {
-            if (!wifi.Interface.IsOpen)
-                wifi.Interface.Open();
-            //wifi.UseDHCP();
-            //wifi.UseStaticIP("169.254.50.93", "255.255.0.0", "169.254.50.91");
-            //wifi.UseThisNetworkInterface();
-
             if (!ethernet.Interface.IsOpen)
                 ethernet.Interface.Open();
-            //ethernet.UseDHCP();
             ethernet.UseStaticIP("192.168.137.2", "255.255.255.0", "192.168.137.1");
             ethernet.UseThisNetworkInterface();
 
@@ -569,6 +542,7 @@ namespace ProgettoAlbertengo
             Debug.Print("connectSocket started");
             try
             {
+                isConnected = 0;
                 Debug.Print("Create new Socket..");
                 if (s != null)
                     s.Close();
@@ -579,6 +553,8 @@ namespace ProgettoAlbertengo
                 IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(ipAddr), 13000);
                 Debug.Print("Connect..");
                 s.Connect(remoteEP);
+
+                Interlocked.Increment(ref isConnected);
 
                 Debug.Print("Connected!");
             }
@@ -696,6 +672,11 @@ namespace ProgettoAlbertengo
             catch (Exception e)
             {
                 Debug.Print("Exception " + e.Message + ":  " + e.StackTrace);
+                Interlocked.Decrement(ref isConnected);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref nThreads);
             }
         }
 
@@ -706,39 +687,6 @@ namespace ProgettoAlbertengo
                 Debug.Print("Network Up: " + ethernet.IsNetworkUp + "\n" + "Network Connected: " + ethernet.IsNetworkConnected);
                 return;
             }
-        }
-
-        private void connectWifi()
-        {
-            /*GHI.Premium.Net.WiFiNetworkInfo info = new WiFiNetworkInfo();
-            info.SSID = "Fezspider";
-            info.SecMode = SecurityMode.Open;
-            info.networkType = NetworkType.AdHoc;
-            
-            while (!wifi.IsNetworkConnected)
-            {
-                wifi.Interface.Join(info, "");
-                if (!wifi.IsNetworkConnected)
-                {
-                    Debug.Print("Non Connesso....");
-                    Thread.Sleep(2000);
-                }
-            }
-
-            Debug.Print("Inizio a sistemare il Socket");
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            String ipAddr = "169.254.50.91";
-            Debug.Print("Preparo il RemoteEP");
-            IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(ipAddr), 13000);
-            Debug.Print("Connecting to "+ipAddr+" ...");
-            s.Connect(remoteEP);
-            Debug.Print("Sending...");
-            s.Send(System.Text.UTF8Encoding.UTF8.GetBytes("ciao minchia"));
-            Debug.Print("Closing...");
-            s.Close();
-            Debug.Print("Led OFF");
-            ledNet.TurnOff();
-             */
         }
 
         private void startUpload()
@@ -761,7 +709,7 @@ namespace ProgettoAlbertengo
                 if (i > 200)
                 {
                     display.SimpleGraphics.ClearNoRedraw();
-                    display.SimpleGraphics.DisplayText(text, font, GT.Color.White, 160 - (uint)(font.AverageWidth * text.Length / 2), 90);
+                    display.SimpleGraphics.DisplayText(text, font, GT.Color.White, 15, 90);
                     i -= 200;
                 }
                 display.SimpleGraphics.DisplayEllipse(GT.Color.White, 60 + i, 150, 5, 5);
@@ -1032,7 +980,6 @@ namespace ProgettoAlbertengo
                     }
                     catch (Exception ex)
                     {
-                        mainWindow.Background = new ImageBrush(errorImgBmp);
                         Debug.Print("Message: " + ex.Message + "  Inner Exception: " + ex.InnerException);
                     }
                     finally
