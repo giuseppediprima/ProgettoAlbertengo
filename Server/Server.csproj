@@ -70,11 +70,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Emailer.cs" />
-    <Compile Include="Form1.cs">
+    <Compile Include="ServerForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="ServerForm.Designer.cs">
+      <DependentUpon>ServerForm.cs</DependentUpon>
     </Compile>
     <Compile Include="MyImageDataSet.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -86,8 +86,8 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <EmbeddedResource Include="ServerForm.resx">
+      <DependentUpon>ServerForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="PanelItem.resx">
       <DependentUpon>PanelItem.cs</DependentUpon>
@@ -143,6 +143,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="trash-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="error.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ProgettoAlbertengo</name>
+    </assembly>
+    <members>
+        <member name="T:ProgettoAlbertengo.Program">
+            <summary>
+            Main class of software on the Fez Spider.
+            The program has been designed as a finite state machine, each screen on the display corresponds to a different state.
+            Each tap on the display has a different function depending on the screen in which the user is located. 
+            </summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.display">
+            <summary>The Display_T35 module using sockets 14, 13, 12 and 10 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.camera">
+            <summary>The Camera (Premium) module using socket 3 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.usbClientDP">
+            <summary>The UsbClientDP module using socket 1 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.joystick">
+            <summary>The Joystick module using socket 9 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.sdCard">
+            <summary>The SDCard module using socket 5 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.wifi">
+            <summary>The WiFi_RS21 (Premium) module using socket 6 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.ethernet">
+            <summary>The Ethernet_J11D (Premium) module using socket 7 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.confirmButton">
+            <summary>The Button module using socket 11 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.backButton">
+            <summary>The Button module using socket 8 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.ledNet">
+            <summary>The MulticolorLed module using socket 4 of the mainboard.</summary>
+        </member>
+        <member name="F:ProgettoAlbertengo.Program.ledSd">
+            <summary>The MulticolorLed module using socket * of ledNet.</summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.Main">
+            <summary>This method runs automatically when the device is powered, and calls ProgramStarted.</summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.ProgramStarted">
+            <summary>
+            This method is run when the mainboard is powered up or reset. It initialize the display with the main window and create the events on the SD card and the
+            ethernet network.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.SetupNet">
+            <summary>
+            Initializes the ethernet network with a static IP configuration.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.connectStreamSocket">
+            <summary>
+            Connects the mainboard with the server to trasmit the stream of the camera. 
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.connectUploadSocket">
+            <summary>
+            Connects the mainboard with the server to move the picture in the SD card to the database's server. 
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.startUpload">
+            <summary>
+            Starts to move the pictures from the SD card to the server using the connection created previously.
+            This method is called when the user tap the upload button on the main window.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.startVideoStreaming">
+            <summary>
+            Starts to send video streaming to the server using the connection created previously.
+            This method is called when the user tap the video button on the main window.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.removeImage">
+            <summary>
+            Remove the picture actually displayed from the SD card. This method is called when the user tap the trash icon on the screen.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.savePicture">
+            <summary>
+            Save the last picture taken whit the camera in the SD card if it is correctly mounted.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.VerifySDCard">
+            <summary>
+            Verify if the SD card is mounted.
+            </summary>
+            <returns>(bool) true if the SD card is mounted, false otherwise.</returns>
+        </member>
+        <member name="M:ProgettoAlbertengo.Program.mostraGalleria">
+            <summary>
+            Shows the photo gallery on the display if there is a SD card mounted, otherwise shows a message "Insert SD card".
+            This method is called when the user tap the gallery button on the display. 
+            </summary>
+        </member>
+        <member name="P:ProgettoAlbertengo.Program.Mainboard">
+            <summary>This property provides access to the Mainboard API. This is normally not necessary for an end user program.</summary>
+        </member>
+        <member name="T:ProgettoAlbertengo.MyBitmap">
+            <summary>
+            Internal class used to send frame by frame the video streaming.
+            </summary>
+        </member>
+        <member name="M:ProgettoAlbertengo.MyBitmap.#ctor(System.Boolean,Microsoft.SPOT.Bitmap)">
+            <summary>
+            MyBitmap class constructor
+            </summary>
+            <param name="last">(bool) if true the bitmap associated is the last of the video stream.</param>
+            <param name="bmp">Bitmap that represents a frame of the video stream. </param>
+        </member>
+    </members>
+</doc>

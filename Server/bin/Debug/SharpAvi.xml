@@ -1,0 +1,762 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>SharpAvi</name>
+    </assembly>
+    <members>
+        <member name="T:SharpAvi.Output.AviStreamExtensions">
+            <summary>
+            Extension methods for the convenient creation of wrappers for AVI streams.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Output.AviStreamExtensions.WithEncoder(SharpAvi.Output.IAviVideoStream,SharpAvi.Codecs.IVideoEncoder)">
+            <summary>Creates the encoding wrapper for an AVI stream.</summary>
+            <param name="stream">Stream to be wrapped.</param>
+            <param name="encoder">Encoder to be used.</param>
+        </member>
+        <member name="M:SharpAvi.Output.AviStreamExtensions.Async(SharpAvi.Output.IAviVideoStream)">
+            <summary>Creates the asynchronous wrapper for an AVI stream.</summary>
+            <param name="stream">Stream to be wrapped.</param>
+        </member>
+        <member name="T:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper">
+            <summary>
+            Ensures that all access to the enclosed <see cref="T:SharpAvi.Codecs.IVideoEncoder"/> instance is made
+            on a single thread.
+            </summary>
+            <remarks>
+            <para>
+            Especially useful for unmanaged encoders like <see cref="T:SharpAvi.Codecs.Mpeg4VideoEncoder"/> in multi-threaded scenarios
+            like asynchronous encoding.
+            </para>
+            <para>
+            Uses <see cref="T:System.Windows.Threading.Dispatcher"/> under the hood.
+            </para>
+            </remarks>
+        </member>
+        <member name="T:SharpAvi.Codecs.IVideoEncoder">
+            <summary>
+            Encoder for video AVI stream.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.IVideoEncoder.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)">
+            <summary>
+            Encodes video frame.
+            </summary>
+            <param name="source">
+            Frame bitmap data. The expected bitmap format is BGR32 top-to-bottom. Alpha component is not used.
+            </param>
+            <param name="srcOffset">
+            Start offset of the frame data in the <paramref name="source"/>.
+            Expected length of the data is determined by the parameters specified when instantinating the encoder.
+            </param>
+            <param name="destination">
+            Buffer for storing the encoded frame data.
+            </param>
+            <param name="destOffset">
+            Start offset of the encoded data in the <paramref name="destination"/> buffer.
+            There should be enough space till the end of the buffer, see <see cref="P:SharpAvi.Codecs.IVideoEncoder.MaxEncodedSize"/>.
+            </param>
+            <param name="isKeyFrame">
+            When the method returns, contains the value indicating whether this frame was encoded as a key frame.
+            </param>
+            <returns>
+            The actual number of bytes written to the <paramref name="destination"/> buffer.
+            </returns>
+        </member>
+        <member name="P:SharpAvi.Codecs.IVideoEncoder.Codec">
+            <summary>Codec ID.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.IVideoEncoder.BitsPerPixel">
+            <summary>
+            Number of bits per pixel in encoded image.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.IVideoEncoder.MaxEncodedSize">
+            <summary>
+            Determines the amount of space needed in the destination buffer for storing the encoded data of a single frame.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper.#ctor(System.Func{SharpAvi.Codecs.IVideoEncoder})">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper"/>.
+            </summary>
+            <param name="encoderFactory">
+            Factory for creating an encoder instance.
+            It will be invoked on the same thread as all subsequent operations of the <see cref="T:SharpAvi.Codecs.IVideoEncoder"/> interface.
+            </param>
+        </member>
+        <member name="M:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper.Dispose">
+            <summary>
+            Disposes the enclosed encoder and stops the internal thread.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)">
+            <summary>
+            Encodes video frame.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper.Codec">
+            <summary>Codec ID.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper.BitsPerPixel">
+            <summary>
+            Number of bits per pixel in encoded image.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper.MaxEncodedSize">
+            <summary>
+            Determines the amount of space needed in the destination buffer for storing the encoded data of a single frame.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Output.IAviStream">
+            <summary>
+            A stream of AVI files.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Output.IAviStream.Index">
+            <summary>
+            Serial number of this stream in AVI file.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Output.IAviStream.Name">
+            <summary>Name of the stream.</summary>
+            <remarks>May be used by some players when displaying the list of available streams.</remarks>
+        </member>
+        <member name="P:SharpAvi.Output.IAviStream.Codec">
+            <summary>
+            ID of the codec used to encode the stream contents.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Output.AsyncVideoStreamWrapper">
+            <summary>
+            Adds to video stream the ability to write frames asynchronously.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Output.IAviVideoStream">
+            <summary>
+            Video stream of AVI file.
+            </summary>
+            <remarks>
+            After the first invocation of <see cref="M:SharpAvi.Output.IAviVideoStream.WriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)"/> no properties of the stream can be changed.
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Output.IAviVideoStream.WriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)">
+            <summary>Writes a frame to the stream.</summary>
+            <param name="isKeyFrame">Is this frame a key frame?</param>
+            <param name="frameData">Array containing the frame data.</param>
+            <param name="startIndex">Index of the first byte of the frame data.</param>
+            <param name="count">Length of the frame data.</param>
+        </member>
+        <member name="P:SharpAvi.Output.IAviVideoStream.Width">
+            <summary>Frame width.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.IAviVideoStream.Height">
+            <summary>Frame height.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.IAviVideoStream.BitsPerPixel">
+            <summary>
+            Number of bits per pixel in the frame's image.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Output.AsyncVideoStreamWrapper.#ctor(SharpAvi.Output.IAviVideoStream)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Output.AsyncVideoStreamWrapper"/>.
+            </summary>
+            <param name="stream">Stream to be warpped.</param>
+            <remarks>
+            The constructor starts a thread for performing asynchronous writing.
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Output.AsyncVideoStreamWrapper.Dispose">
+            <summary>
+            Disposes all unmanaged resources.
+            </summary>
+            <remarks>
+            This method also stops the thread used for asynchronous writing.
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Output.AsyncVideoStreamWrapper.WriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Synchronously writes a frame.
+            </summary>
+            <seealso cref="M:SharpAvi.Output.IAviVideoStream.WriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)"/>
+        </member>
+        <member name="M:SharpAvi.Output.AsyncVideoStreamWrapper.BeginWriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)">
+            <summary>Asynchronously writes the next frame.</summary>
+            <remarks>
+            Call <see cref="M:SharpAvi.Output.AsyncVideoStreamWrapper.EndWriteFrame"/> before writing a new frame.
+            Accessing an array passed as the <paramref name="frameData"/> is not safe until <see cref="M:SharpAvi.Output.AsyncVideoStreamWrapper.EndWriteFrame"/> is invoked.
+            </remarks>
+            <exception cref="T:System.InvalidOperationException">
+            Writing the previous frame resulted in error. Further use of this instance is not possible.
+            The <see cref="P:System.Exception.InnerException"/> property contains the original exception.
+            </exception>
+            <seealso cref="M:SharpAvi.Output.IAviVideoStream.WriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)"/>
+        </member>
+        <member name="M:SharpAvi.Output.AsyncVideoStreamWrapper.EndWriteFrame">
+            <summary>
+            Waits until the frame is written after the previous invocation of <see cref="M:SharpAvi.Output.AsyncVideoStreamWrapper.BeginWriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)"/>.
+            </summary>
+            <exception cref="T:System.IO.IOException">
+            There was an exception when writing a frame. Further use of this instance is not possible.
+            The <see cref="P:System.Exception.InnerException"/> property contains the original exception.
+            </exception>
+        </member>
+        <member name="P:SharpAvi.Output.AsyncVideoStreamWrapper.Index">
+            <summary>Sequential number of the stream.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.AsyncVideoStreamWrapper.Name">
+            <summary>Name of the stream.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.AsyncVideoStreamWrapper.Codec">
+            <summary>Codec.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.AsyncVideoStreamWrapper.Width">
+            <summary>Frame width.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.AsyncVideoStreamWrapper.Height">
+            <summary>Frame height.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.AsyncVideoStreamWrapper.BitsPerPixel">
+            <summary>
+            Number of bits per pixel in frame's image.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.VfwApi">
+            <summary>
+            Selected constants, structures and functions from Video for Windows APIs.
+            </summary>
+            <remarks>
+            Useful for implementing stream encoding using VCM codecs.
+            See Windows API documentation on the meaning and usage of all this stuff.
+            </remarks>
+        </member>
+        <member name="T:SharpAvi.Codecs.VfwApi.BitmapInfoHeader">
+            <summary>
+            Corresponds to the <c>BITMAPINFOHEADER</c> structure.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.VfwApi.CompressorInfo">
+            <summary>
+            Corresponds to the <c>ICINFO</c> structure.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.VfwApi.CompressFramesInfo">
+            <summary>
+            Corresponds to the <c>ICCOMPRESSFRAMES</c> structure.
+            </summary>
+        </member>
+        <member name="F:SharpAvi.Codecs.VfwApi.CompressFramesInfo.Quality">
+            <summary>Quality from 0 to 10000.</summary>
+        </member>
+        <member name="F:SharpAvi.Codecs.VfwApi.CompressFramesInfo.KeyRate">
+            <summary>Interval between key frames.</summary>
+            <remarks>Equal to 1 if each frame is a key frame.</remarks>
+        </member>
+        <member name="F:SharpAvi.Codecs.VfwApi.CompressFramesInfo.FrameRateNumerator">
+            <summary></summary>
+        </member>
+        <member name="T:SharpAvi.Output.EncodingVideoStreamWrapper">
+            <summary>
+            Wrapper on the <see cref="T:SharpAvi.Output.IAviVideoStream"/> object to provide encoding.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Output.EncodingVideoStreamWrapper.#ctor(SharpAvi.Output.IAviVideoStream,SharpAvi.Codecs.IVideoEncoder)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Output.EncodingVideoStreamWrapper"/>.
+            </summary>
+            <param name="stream">Video stream to be wrapped.</param>
+            <param name="encoder">Encoder to be used.</param>
+        </member>
+        <member name="M:SharpAvi.Output.EncodingVideoStreamWrapper.WriteFrame(System.Byte[],System.Int32)">
+            <summary>Encodes and writes a frame.</summary>
+            <remarks>
+            When invoking the corresponding method of the <see cref="T:SharpAvi.Output.IAviVideoStream"/> interface, 
+            the values of its parameters <c>isKeyFrame</c> and <c>count</c> are ignored.
+            </remarks>
+            <seealso cref="M:SharpAvi.Output.IAviVideoStream.WriteFrame(System.Boolean,System.Byte[],System.Int32,System.Int32)"/>
+        </member>
+        <member name="P:SharpAvi.Output.EncodingVideoStreamWrapper.Index">
+            <summary>
+            Sequential number of the stream.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Output.EncodingVideoStreamWrapper.Name">
+            <summary>
+            Name of the stream.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Output.EncodingVideoStreamWrapper.Codec">
+            <summary> Video codec. </summary>
+            <remarks>
+            The value of this property is defined by the <see cref="P:SharpAvi.Codecs.IVideoEncoder.BitsPerPixel"/> property of the encoder.
+            When accessing the corresponding property of the <see cref="T:SharpAvi.Output.IAviVideoStream"/> interface, its setter
+            throws a <see cref="T:System.NotSupportedException"/>.
+            </remarks>
+        </member>
+        <member name="P:SharpAvi.Output.EncodingVideoStreamWrapper.Width">
+            <summary>Frame width.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.EncodingVideoStreamWrapper.Height">
+            <summary>Frame height.</summary>
+        </member>
+        <member name="P:SharpAvi.Output.EncodingVideoStreamWrapper.BitsPerPixel">
+            <summary> Bits per pixel. </summary>
+            <remarks>
+            The value of this property is defined by the <see cref="P:SharpAvi.Codecs.IVideoEncoder.BitsPerPixel"/> property of the encoder.
+            When accessing the corresponding property of the <see cref="T:SharpAvi.Output.IAviVideoStream"/> interface, its setter
+            throws a <see cref="T:System.NotSupportedException"/>.
+            </remarks>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs">
+            <summary>
+            Contains definitions of known FOURCC values.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs.Chunks">
+            <summary>
+            RIFF chunk indentifiers used in AVI format.
+            </summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.AviHeader">
+            <summary>Main AVI header.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.StreamHeader">
+            <summary>Stream header.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.StreamFormat">
+            <summary>Stream format.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.StreamName">
+            <summary>Stream name.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.StreamIndex">
+            <summary>Stream index.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.OpenDmlHeader">
+            <summary>OpenDML header.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Chunks.Junk">
+            <summary>Junk chunk.</summary>
+        </member>
+        <member name="M:SharpAvi.KnownFourCCs.Chunks.VideoFrame(System.Int32,System.Boolean)">
+            <summary>Gets the identifier of a video frame chunk.</summary>
+            <param name="streamIndex">Sequential number of the stream.</param>
+            <param name="compressed">Whether stream contents is compressed.</param>
+        </member>
+        <member name="M:SharpAvi.KnownFourCCs.Chunks.AudioData(System.Int32)">
+            <summary>Gets the identifier of an audio data chunk.</summary>
+            <param name="streamIndex">Sequential number of the stream.</param>
+        </member>
+        <member name="M:SharpAvi.KnownFourCCs.Chunks.IndexData(System.Int32)">
+            <summary>Gets the identifier of an index chunk.</summary>
+            <param name="streamIndex">Sequential number of the stream.</param>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs.Lists">
+            <summary>
+            RIFF lists identifiers used in AVI format.
+            </summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Lists.Avi">
+            <summary>Top-level AVI list.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Lists.AviExtended">
+            <summary>Top-level extended AVI list.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Lists.Header">
+            <summary>Header list.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Lists.Stream">
+            <summary>List containing stream information.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Lists.OpenDml">
+            <summary>List containing OpenDML headers.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Lists.Movie">
+            <summary>List with content chunks.</summary>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs.ListTypes">
+            <summary>
+            Identifiers of the list types used in RIFF format.
+            </summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.ListTypes.Riff">
+            <summary>Top-level list type.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.ListTypes.List">
+            <summary>Non top-level list type.</summary>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs.StreamTypes">
+            <summary>
+            Identifiers of the stream types used in AVI format.
+            </summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.StreamTypes.Video">
+            <summary>Video stream.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.StreamTypes.Audio">
+            <summary>Audio stream.</summary>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs.Codecs">
+            <summary>Identifiers of various codecs.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.Uncompressed">
+            <summary>Identifier used for non-compressed data.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.MotionJpeg">
+            <summary>Motion JPEG.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.MicrosoftMpeg4V3">
+            <summary>Microsoft MPEG-4 V3.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.MicrosoftMpeg4V2">
+            <summary>Microsoft MPEG-4 V2.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.Xvid">
+            <summary>Xvid MPEG-4.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.DivX">
+            <summary>DivX MPEG-4.</summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.Codecs.X264">
+            <summary>x264 H.264/MPEG-4 AVC.</summary>
+        </member>
+        <member name="T:SharpAvi.KnownFourCCs.CodecTypes">
+            <summary>
+            Identifiers of codec types used in Video for Windows API.
+            </summary>
+        </member>
+        <member name="F:SharpAvi.KnownFourCCs.CodecTypes.Video">
+            <summary>Video codec.</summary>
+        </member>
+        <member name="T:SharpAvi.Output.AviWriter">
+            <summary>
+            Used to write an AVI file.
+            </summary>
+            <remarks>
+            After writing begin to any of the streams, no property changes or stream addition are allowed.
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Output.AviWriter.#ctor(System.String)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Output.AviWriter"/>.
+            </summary>
+            <param name="fileName">Path to an AVI file being written.</param>
+        </member>
+        <member name="M:SharpAvi.Output.AviWriter.AddVideoStream">
+            <summary>Adds a new video stream.</summary>
+            <returns>Newly added video stream.</returns>
+        </member>
+        <member name="M:SharpAvi.Output.AviWriter.Close">
+            <summary>
+            Closes the writer and AVI file itself.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Output.AviWriter.FramesPerSecond">
+            <summary>Frame rate.</summary>
+            <remarks>
+            The value of the property is rounded to 3 fractional digits.
+            </remarks>
+        </member>
+        <member name="P:SharpAvi.Output.AviWriter.Streams">
+            <summary>AVI streams that have been added so far.</summary>
+        </member>
+        <member name="T:SharpAvi.Output.RiffItem">
+            <summary>
+            Item of a RIFF file - either list or chunk.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.MotionJpegVideoEncoderWpf">
+            <summary>
+            Encodes frames in Motion JPEG format.
+            </summary>
+            <remarks>
+            <para>
+            The implementation relies on <see cref="T:System.Windows.Media.Imaging.JpegBitmapEncoder"/>.
+            All calls to <see cref="M:SharpAvi.Codecs.MotionJpegVideoEncoderWpf.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)"/> should be made on the same thread. However, this thread may differ from the thread 
+            on which the encoder instance was created.
+            </para>
+            <para>
+            This encoder is not fully conformant to the Motion JPEG standard, as each encoded frame is a full JPEG picture 
+            with its own Huffman tables, and not those fixed Huffman tables defined by the Motion JPEG standard. 
+            However, (at least most) modern decoders for Motion JPEG properly handle this situation.
+            This also produces a little overhead on the file size.
+            </para>
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Codecs.MotionJpegVideoEncoderWpf.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Codecs.MotionJpegVideoEncoderWpf"/>.
+            </summary>
+            <param name="width">Frame width.</param>
+            <param name="height">Frame height.</param>
+            <param name="quality">
+            Compression quality in the range [1..100].
+            Less values mean less size and lower image quality.
+            </param>
+        </member>
+        <member name="M:SharpAvi.Codecs.MotionJpegVideoEncoderWpf.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)">
+            <summary>
+            Encodes a frame.
+            </summary>
+            <seealso cref="M:SharpAvi.Codecs.IVideoEncoder.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)"/>
+        </member>
+        <member name="P:SharpAvi.Codecs.MotionJpegVideoEncoderWpf.Codec">
+            <summary>Video codec.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.MotionJpegVideoEncoderWpf.BitsPerPixel">
+            <summary>
+            Number of bits per pixel in encoded image.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.MotionJpegVideoEncoderWpf.MaxEncodedSize">
+            <summary>
+            Maximum size of encoded frmae.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.AviUtils">
+            <summary>
+            Auxiliary methods helping to deal with AVI files.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.AviUtils.SplitFrameRate(System.Decimal,System.UInt32@,System.UInt32@)">
+            <summary>
+            Splits frame rate value to integer <c>rate</c> and <c>scale</c> values used in some AVI headers
+            and VfW APIs.
+            </summary>
+            <param name="frameRate">
+            Frame rate. Rounded to 3 fractional digits.
+            </param>
+            <param name="rate">
+            When the method returns, contains rate value.
+            </param>
+            <param name="scale">
+            When the method returns, contains scale value.
+            </param>
+        </member>
+        <member name="T:SharpAvi.FourCC">
+            <summary>
+            Represents four character code (FOURCC).
+            </summary>
+            <remarks>
+            FOURCCs are used widely across AVI format.
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.FourCC.#ctor(System.UInt32)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.FourCC"/> with an integer value.
+            </summary>
+            <param name="value">Integer value of FOURCC.</param>
+        </member>
+        <member name="M:SharpAvi.FourCC.#ctor(System.String)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.FourCC"/> with a string value.
+            </summary>
+            <param name="value">
+            String value of FOURCC.
+            Should be not longer than 4 characters, all of them are printable ASCII characters.
+            </param>
+            <remarks>
+            If the value of <paramref name="value"/> is shorter than 4 characters, it is right-padded with spaces.
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.FourCC.ToString">
+            <summary>
+            Returns string representation of this instance.
+            </summary>
+            <returns>
+            String value if all bytes are printable ASCII characters. Otherwise, the hexadecimal representation of integer value.
+            </returns>
+        </member>
+        <member name="M:SharpAvi.FourCC.GetHashCode">
+            <summary>
+            Gets hash code of this instance.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.Equals(System.Object)">
+            <summary>
+            Determines whether this instance is equal to other object.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.op_Implicit(System.UInt32)~SharpAvi.FourCC">
+            <summary>
+            Converts an integer value to <see cref="T:SharpAvi.FourCC"/>.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.op_Implicit(System.String)~SharpAvi.FourCC">
+            <summary>
+            Converts a string value to <see cref="T:SharpAvi.FourCC"/>.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.op_Explicit(SharpAvi.FourCC)~System.UInt32">
+            <summary>
+            Gets the integer value of <see cref="T:SharpAvi.FourCC"/> instance.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.op_Explicit(SharpAvi.FourCC)~System.String">
+            <summary>
+            Gets the string value of <see cref="T:SharpAvi.FourCC"/> instance.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.op_Equality(SharpAvi.FourCC,SharpAvi.FourCC)">
+            <summary>
+            Determines whether two instances of <see cref="T:SharpAvi.FourCC"/> are equal.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.FourCC.op_Inequality(SharpAvi.FourCC,SharpAvi.FourCC)">
+            <summary>
+            Determines whether two instances of <see cref="T:SharpAvi.FourCC"/> are not equal.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.Mpeg4VideoEncoder">
+            <summary>
+            Encodes video stream in MPEG-4 format using one of VCM codecs installed on the system.
+            </summary>
+            <remarks>
+            <para>
+            Supported codecs include Microsoft MPEG-4 V3 and V2, Xvid, DivX and x264.
+            The codec to be used is selected from the ones installed on the system.
+            The encoder can be forced to use MPEG-4 codecs that are not explicitly supported. However, in this case
+            it is not guaranteed to work properly.
+            </para>
+            <para>
+            64-bit support is limited, as there are no 64-bit versions of Microsoft and DivX codecs, 
+            and Xvid can produce some errors.
+            </para>
+            <para>
+            In multi-threaded scenarios, like asynchronous encoding, it is recommended to wrap this encoder into
+            <see cref="T:SharpAvi.Codecs.SingleThreadedVideoEncoderWrapper"/> for the stable work.
+            </para>
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Codecs.Mpeg4VideoEncoder.GetAvailableCodecs">
+            <summary>
+            Gets info about the supported codecs that are installed on the system.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.Mpeg4VideoEncoder.#ctor(System.Int32,System.Int32,System.Double,System.Int32,System.Int32,SharpAvi.FourCC[])">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Codecs.Mpeg4VideoEncoder"/>.
+            </summary>
+            <param name="width">Frame width.</param>
+            <param name="height">Frame height.</param>
+            <param name="fps">Frame rate.</param>
+            <param name="frameCount">
+            Number of frames to be encoded.
+            If not known, specify 0.
+            </param>
+            <param name="quality">
+            Compression quality in the range [1..100].
+            Less values mean less size and lower image quality.
+            </param>
+            <param name="codecPreference">
+            List of codecs that can be used by this encoder, in preferred order.
+            </param>
+            <exception cref="T:System.InvalidOperationException">
+            No compatible codec was found in the system.
+            </exception>
+            <remarks>
+            <para>
+            It is not guaranteed that the codec will respect the specified <paramref name="quality"/> value.
+            This depends on its implementation.
+            </para>
+            <para>
+            If no preferred codecs are specified, then <see cref="P:SharpAvi.Codecs.Mpeg4VideoEncoder.DefaultCodecPreference"/> is used.
+            MPEG-4 codecs that are not explicitly supported can be specified. However, in this case
+            the encoder is not guaranteed to work properly.
+            </para>
+            </remarks>
+        </member>
+        <member name="M:SharpAvi.Codecs.Mpeg4VideoEncoder.Finalize">
+            <summary>
+            Performs any necessary cleanup before this instance is garbage-collected.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.Mpeg4VideoEncoder.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)">
+            <summary>Encodes a frame.</summary>
+            <seealso cref="M:SharpAvi.Codecs.IVideoEncoder.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)"/>
+        </member>
+        <member name="M:SharpAvi.Codecs.Mpeg4VideoEncoder.Dispose">
+            <summary>
+            Releases all unmanaged resources used by the encoder.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.Mpeg4VideoEncoder.DefaultCodecPreference">
+            <summary>
+            Default preferred order of the supported codecs.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.Mpeg4VideoEncoder.Codec">
+            <summary>Video codec.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.Mpeg4VideoEncoder.BitsPerPixel">
+            <summary>Number of bits per pixel in the encoded image.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.Mpeg4VideoEncoder.MaxEncodedSize">
+            <summary>
+            Maximum size of the encoded frame.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.RgbVideoEncoder">
+            <summary>
+            Encodes frames in BGR24 format without compression.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.RgbVideoEncoder.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Codecs.RgbVideoEncoder"/>.
+            </summary>
+            <param name="width">Frame width.</param>
+            <param name="height">Frame height.</param>
+        </member>
+        <member name="M:SharpAvi.Codecs.RgbVideoEncoder.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)">
+            <summary>
+            Encodes a frame.
+            </summary>
+            <seealso cref="M:SharpAvi.Codecs.IVideoEncoder.EncodeFrame(System.Byte[],System.Int32,System.Byte[],System.Int32,System.Boolean@)"/>
+        </member>
+        <member name="P:SharpAvi.Codecs.RgbVideoEncoder.Codec">
+            <summary>Video codec.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.RgbVideoEncoder.BitsPerPixel">
+            <summary>
+            Number of bits per pixel in encoded image.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.RgbVideoEncoder.MaxEncodedSize">
+            <summary>
+            Maximum size of encoded frame.
+            </summary>
+        </member>
+        <member name="T:SharpAvi.BitsPerPixel">
+            <summary>Number of bits per pixel.</summary>
+        </member>
+        <member name="F:SharpAvi.BitsPerPixel.Bpp16">
+            <summary>16 bits per pixel.</summary>
+        </member>
+        <member name="F:SharpAvi.BitsPerPixel.Bpp24">
+            <summary>24 bits per pixel.</summary>
+        </member>
+        <member name="F:SharpAvi.BitsPerPixel.Bpp32">
+            <summary>32 bits per pixel.</summary>
+        </member>
+        <member name="T:SharpAvi.Codecs.CodecInfo">
+            <summary>
+            Information about a codec.
+            </summary>
+        </member>
+        <member name="M:SharpAvi.Codecs.CodecInfo.#ctor(SharpAvi.FourCC,System.String)">
+            <summary>
+            Creates a new instance of <see cref="T:SharpAvi.Codecs.CodecInfo"/>.
+            </summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.CodecInfo.Codec">
+            <summary>Codec ID.</summary>
+        </member>
+        <member name="P:SharpAvi.Codecs.CodecInfo.Name">
+            <summary>
+            Descriptive codec name that may be show to a user.
+            </summary>
+        </member>
+    </members>
+</doc>

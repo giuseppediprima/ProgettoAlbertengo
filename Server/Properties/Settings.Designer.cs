@@ -32,5 +32,15 @@ namespace Server.Properties {
                 return ((string)(this["MyDBConnectionString"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=ANTONIO-PC\\SQLEXPRESS;Initial Catalog=MyDB;Integrated Security=True")]
+        public string MyDBConnectionString1 {
+            get {
+                return ((string)(this["MyDBConnectionString1"]));
+            }
+        }
     }
 }

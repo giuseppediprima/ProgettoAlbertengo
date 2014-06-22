@@ -160,7 +160,7 @@ namespace Server
                 var formPicture = new Form();
                 var picture = new PictureBox();
                 picture.Dock = DockStyle.Fill;
-                picture.Image = new Bitmap(Form1.byteArrayToImage((byte[])(idt.Rows[0].ItemArray[1])));
+                picture.Image = new Bitmap(ServerForm.byteArrayToImage((byte[])(idt.Rows[0].ItemArray[1])));
                 picture.SizeMode = PictureBoxSizeMode.StretchImage;
                 formPicture.Controls.Add(picture);
                 formPicture.MaximumSize = new Size(960, 720);

@@ -22,3 +22,27 @@ C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarri
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF.Game\obj\Debug\le\dotnetwarrior.NetMF.Game.pdbx
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF.Game\obj\Debug\dotnetwarrior.NetMF.Game.dll
 C:\Users\WinMac\Desktop\Dropbox\P&LoCS\201208-GadgeteerAssets\Pacman\dotnetwarrior.NetMF.Game\obj\Debug\dotnetwarrior.NetMF.Game.pdb
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\le\dotnetwarrior.NetMF.Game.dll
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\be\dotnetwarrior.NetMF.Game.dll
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\le\dotnetwarrior.NetMF.Game.pdb
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\be\dotnetwarrior.NetMF.Game.pdb
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\dotnetwarrior.NetMF.Game.dll
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\dotnetwarrior.NetMF.Game.pdb
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\le\dotnetwarrior.NetMF.Game.pe
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\le\dotnetwarrior.NetMF.Game.pdbx
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\be\dotnetwarrior.NetMF.Game.pe
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\be\dotnetwarrior.NetMF.Game.pdbx
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\LE\dotnetwarrior.NetMF.pe
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\BE\dotnetwarrior.NetMF.pe
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\LE\dotnetwarrior.NetMF.pdbx
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\BE\dotnetwarrior.NetMF.pdbx
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\dotnetwarrior.NetMF.dll
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\bin\Debug\dotnetwarrior.NetMF.pdb
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\dotnetwarrior.NetMF.Game.csprojResolveAssemblyReference.cache
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\TinyCLR_DebugReferences.cache
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\be\dotnetwarrior.NetMF.Game.pe
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\be\dotnetwarrior.NetMF.Game.pdbx
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\le\dotnetwarrior.NetMF.Game.pe
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\le\dotnetwarrior.NetMF.Game.pdbx
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\dotnetwarrior.NetMF.Game.dll
+C:\Users\Antonio\Documents\Visual Studio 2012\Projects\ProgettoAlbertengo\dotnetwarrior.NetMF.Game\obj\Debug\dotnetwarrior.NetMF.Game.pdb
